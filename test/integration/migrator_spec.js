@@ -6,6 +6,7 @@ var fs         = require('fs');
 var path       = require('path');
 var helpers    = require('../helpers');
 var Task       = require('./../../');
+const Promise  = require('bluebird');
 
 describe('Migrator', function() {
   var task;
@@ -20,6 +21,8 @@ describe('Migrator', function() {
       cb();
     });
   };
+  const hasMigrationsAsync = Promise.promisify(hasMigrations);
+
   var SELECT_COLUMN = 'SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name = ? AND column_name = ?';
   var hasColumn = function(table, column, cb) {
     conn.execQuery(SELECT_COLUMN, [table, column], function(err, columns) {
@@ -28,6 +31,8 @@ describe('Migrator', function() {
       cb();
     });
   };
+  const hasColumnAsync = Promise.promisify(hasColumn);
+
   var SELECT_TABLE = 'SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE table_name = ?';
   var hasTable = function(table, cb) {
     conn.execQuery(SELECT_TABLE, [table], function(err, tables) {
@@ -36,13 +41,15 @@ describe('Migrator', function() {
       cb();
     });
   };
+
   var hasNoTable = function(table, cb) {
     conn.execQuery(SELECT_TABLE, [table], function(err, tables) {
       should.not.exist(err);
       tables.should.have.length(0);
       cb();
     });
-  }
+  };
+  const hasNoTableAsync = Promise.promisify(hasNoTable);
 
   before(function(done) {
     helpers.connect(function(err, connection) {
@@ -101,6 +108,17 @@ describe('Migrator', function() {
         _.partial(hasMigrations, 2)
       ], done);
     });
+
+    describe('Promise support', () => {
+      it('runs two migrations successfully', () => {
+        return task.up().then(() => {
+          return Promise.all([
+            hasColumnAsync('table1', 'wobble'),
+            hasColumnAsync('table1', 'wibble')
+          ]);
+        });
+      });
+    });
   });
 
   describe('#down', function() {
@@ -121,6 +139,24 @@ describe('Migrator', function() {
         _.partial(hasMigrations, 0),
         _.partial(hasNoTable, 'table1')
       ], done);
+    });
+
+    describe('Promise support', () => {
+      it('runs two migrations successfully', () => {
+        return task.up()
+          .then(() => {
+            return hasMigrationsAsync(2);
+          })
+          .then(() => {
+            return task.down('001-create-table1.js');
+          })
+          .then(() => {
+            return Promise.all([
+              hasMigrationsAsync(0),
+              hasNoTableAsync('table1')
+            ]);
+          });
+      });
     });
   });
 
@@ -174,6 +210,16 @@ describe('Migrator', function() {
         var filePath = path.join(cwd, task.dir, filename + '.coffee');
         fs.statSync(filePath).isFile().should.be.true;
         done();
+      });
+    });
+
+    describe.only('Promise support', () => {
+      it('generates a migration', () => {
+        return task.generate('test1')
+          .then((filename) => {
+            var filePath = path.join(cwd, task.dir, filename + '.js');
+            fs.statSync(filePath).isFile().should.be.true;
+          })
       });
     });
   });
