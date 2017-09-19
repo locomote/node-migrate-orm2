@@ -1,4 +1,5 @@
 const _             = require('lodash');
+const should        = require('should');
 const sinon         = require('sinon');
 const sandbox       = sinon.sandbox.create();
 
@@ -35,9 +36,9 @@ describe('MigrationDSL', function() {
     let dsl;
 
     beforeEach(() => {
-      sandbox.stub(require("sql-ddl-sync"), 'dialect', () => dialect);
+      sandbox.stub(require("sql-ddl-sync"), 'dialect').callsFake(() => dialect);
       dsl = fake.dsl( fake.driver(dialect) );
-      sandbox.stub(dsl, '_createColumn', () =>  { return fake.object() });
+      sandbox.stub(dsl, '_createColumn').callsFake(() =>  { return fake.object() });
       sandbox.stub(dialect, 'addCollectionColumn').yields(null, 123);
     });
 
@@ -56,5 +57,15 @@ describe('MigrationDSL', function() {
         dsl.addColumn(fake.object(), {columnName: fake.object()}, cb);
       });
     });
+
+    describe('Promise support', () => {
+      it('returns Promise unless callback is specified', () => {
+        return dsl.addColumn(fake.object(), {columnName: fake.object()})
+          .then((val) => {
+            val.should.be.equal(123);
+          });
+      });
+    });
   });
+
 });
