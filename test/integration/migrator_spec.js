@@ -213,7 +213,7 @@ describe('Migrator', function() {
       });
     });
 
-    describe.only('Promise support', () => {
+    describe('Promise support', () => {
       it('generates a migration', () => {
         return task.generate('test1')
           .then((filename) => {

@@ -5,7 +5,7 @@ var helpers = require('./helpers');
 
 const Promise = require('bluebird');
 
-var mocha      = new Mocha({ reporter: "spec" });
+let mocha;
 var configPath = path.normalize(path.join(__dirname, 'config.js'));
 
 
@@ -15,6 +15,7 @@ if (!helpers.isTravis() && !fs.existsSync(configPath)) {
 }
 
 function runTests(dir, cb) {
+  mocha      = new Mocha({ reporter: "spec" });
   fs.readdirSync(dir).filter(function (file) {
     return file.substr(-3) === '.js';
   }).forEach(function (file) {
@@ -51,7 +52,7 @@ function run (err) {
     "\n------------------------"
   );
 
-  Promise.mapSeries(['integration'], function(dir) {
+  Promise.mapSeries(['unit', 'integration'], function(dir) {
     return runTestsAsync(path.normalize(path.join(__dirname, dir)));
   })
     .then(() => run())
