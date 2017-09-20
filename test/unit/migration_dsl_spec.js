@@ -1,30 +1,30 @@
 "use strict";
-var _             = require('lodash');
 var should        = require('should');
 var sinon         = require('sinon');
 var sandbox       = sinon.sandbox.create();
 
 var MigrationDSL  = require('../../lib/migration-dsl');
 
+var noop = function(){};
 
 var fake = {
   object: function () { return {} },
-
+  
   dialect: function () {
     return {
-      addCollectionColumn: _.noop,
-      createCollection: _.noop,
-      renameCollectionColumn: _.noop,
-      addIndex: _.noop,
-      removeIndex: _.noop,
-      dropCollectionColumn: _.noop,
-      dropCollection: _.noop,
-      addPrimaryKey: _.noop,
-      dropPrimaryKey: _.noop,
-      addForeignKey: _.noop,
-      dropForeignKey: _.noop,
-      hasCollection: _.noop,
-      getCollectionProperties: _.noop
+      addCollectionColumn: noop,
+      createCollection: noop,
+      renameCollectionColumn: noop,
+      addIndex: noop,
+      removeIndex: noop,
+      dropCollectionColumn: noop,
+      dropCollection: noop,
+      addPrimaryKey: noop,
+      dropPrimaryKey: noop,
+      addForeignKey: noop,
+      dropForeignKey: noop,
+      hasCollection: noop,
+      getCollectionProperties: noop
     };
   },
 
@@ -34,7 +34,7 @@ var fake = {
       query: {
         escapeId: 'the-escape-id'
       },
-      execQuery: _.noop
+      execQuery: noop
     }
   },
 
