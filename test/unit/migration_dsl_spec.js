@@ -1,4 +1,5 @@
 "use strict";
+var _             = require('lodash');
 var should        = require('should');
 var sinon         = require('sinon');
 var sandbox       = sinon.sandbox.create();
@@ -44,20 +45,13 @@ var fake = {
   }
 };
 
-shared.examplesFor('supporting callback interface', function(setupContextFunc) {
-  if(typeof(setupContextFunc) !== 'function') { throw '`setupContextFunc` is required!';  }
-  var opts;
+shared.examplesFor('supporting callback interface', function(opts) {
   var sandbox = sinon.sandbox.create();
 
   describe('Callback interface', function() {
     beforeEach('Setup context', function () {
-      setupContextFunc(opts = {});
-
-      if (!opts.testedObject) {
-        throw '`testedObject`option is required!';
-      }
-      if (!opts.testedMethodName) {
-        throw '`testedMethodName`option is required!';
+      if (!opts.run) {
+        throw '`run` option is required (Function)!';
       }
       if (!opts.internalObject) {
         throw '`internalObject`option is required!';
@@ -65,35 +59,16 @@ shared.examplesFor('supporting callback interface', function(setupContextFunc) {
       if (!opts.internalMethodName) {
         throw '`internalMethodName`option is required!';
       }
-      if (opts.internalMethodArgs && !Array.isArray(opts.internalMethodArgs)) {
-        throw '`InternalMethodArgs` option must be Array!';
-      }
     });
 
     afterEach(function () {
       sandbox.verifyAndRestore();
     });
 
-    var internalCallArgs = function (cb) {
-      var args = [];
-
-      if (opts.internalMethodArgs) {
-        args = args.concat(opts.internalMethodArgs);
-      }
-
-      if (cb) {
-        args.push(cb);
-      }
-
-      return args;
-    };
-
     describe('optimistic case', function () {
-
       beforeEach('stub internal call', function () {
         sandbox.stub(opts.internalObject, opts.internalMethodName).yields(null, 123);
       });
-
 
       it('calls the passed callback', function (done) {
         var cb = sandbox.mock();
@@ -101,7 +76,7 @@ shared.examplesFor('supporting callback interface', function(setupContextFunc) {
 
         cb.once().withArgs(null, 123);
 
-        opts.testedObject[opts.testedMethodName].apply(opts.testedObject, internalCallArgs(cb));
+        opts.run(cb);
       });
     });
 
@@ -118,35 +93,25 @@ shared.examplesFor('supporting callback interface', function(setupContextFunc) {
 
         cb.once().withArgs(sinon.match.instanceOf(Error).and(sinon.match.has('message', 'problem')));
 
-        opts.testedObject[opts.testedMethodName].apply(opts.testedObject, internalCallArgs(cb));
+        opts.run(cb);
       });
     });
   })
 });
 
-shared.examplesFor('supporting Promise interface', function(setupContextFunc) {
-  if(typeof(setupContextFunc) !== 'function') { throw '`setupContextFunc` is required!';  }
-  var opts;
+shared.examplesFor('supporting Promise interface', function(opts) {
   var sandbox = sinon.sandbox.create();
 
   describe('Promise interface', function () {
-
     beforeEach('Setup context', function () {
-      setupContextFunc(opts = {});
-      if (!opts.testedObject) {
-        throw '`testedObject`option is required!';
-      }
-      if (!opts.testedMethodName) {
-        throw '`testedMethodName`option is required!';
+      if (!opts.run) {
+        throw '`run` option is required (Function)!';
       }
       if (!opts.internalObject) {
         throw '`internalObject`option is required!';
       }
       if (!opts.internalMethodName) {
         throw '`internalMethodName`option is required!';
-      }
-      if (opts.internalMethodArgs && !Array.isArray(opts.internalMethodArgs)) {
-        throw '`InternalMethodArgs` option must be Array!';
       }
     });
 
@@ -160,7 +125,7 @@ shared.examplesFor('supporting Promise interface', function(setupContextFunc) {
       });
 
       it('returns Promise unless callback is specified', function () {
-        return opts.testedObject[opts.testedMethodName].apply(opts.testedObject, opts.internalMethodArgs)
+        return opts.run()
           .then(function (val) {
             val.should.be.equal(123);
           });
@@ -173,7 +138,7 @@ shared.examplesFor('supporting Promise interface', function(setupContextFunc) {
       });
 
       it('returns rejected Promise unless callback is specified', function () {
-        return opts.testedObject[opts.testedMethodName].apply(opts.testedObject, opts.internalMethodArgs)
+        return opts.run()
           .catch(function (err) {
             err.should.be.instanceOf(Error);
             err.message.should.equal('problem');
@@ -199,208 +164,335 @@ describe('MigrationDSL', function() {
   });
 
   afterEach(function () {
-    sandbox.verify();
-    sandbox.restore();
+    sandbox.verifyAndRestore();
   });
 
   describe('MigrationDSL.prototype.createTable', function() {
-      var setupContext = function (opts) {
-      opts.testedObject       = dsl;
-      opts.testedMethodName   = 'createTable';
-      opts.internalObject     = dialect;
-      opts.internalMethodName ='createCollection';
-      opts.internalMethodArgs = ['collection_name', {}];
+    var contextOpts = {
+      internalObject: dialect,
+      internalMethodName: 'createCollection'
     };
 
-    shared.shouldBehaveLike('supporting callback interface', setupContext);
+    shared.shouldBehaveLike('supporting callback interface',
+      _.assign({}, contextOpts, {
+        run: function(cb) {
+          dsl.createTable('collection_name', {}, cb);
+        }
+      })
+    );
 
-    shared.shouldBehaveLike('supporting Promise interface', setupContext);
+    shared.shouldBehaveLike('supporting Promise interface',
+      _.assign({}, contextOpts, {
+        run: function() {
+          return dsl.createTable('collection_name', {});
+        }
+      })
+    );
   });
 
   describe('MigrationDSL.prototype.addColumn', function() {
+    var contextOpts = {
+      internalObject: dialect,
+      internalMethodName: 'addCollectionColumn'
+    };
 
     beforeEach(function () {
       sandbox.stub(dsl, '_createColumn').callsFake(function ()  { return fake.object() });
     });
 
-    var setupContext = function (opts) {
-      opts.testedObject       = dsl;
-      opts.testedMethodName   = 'addColumn';
-      opts.internalObject     = dialect;
-      opts.internalMethodName ='addCollectionColumn';
-      opts.internalMethodArgs = ['fake_column', {columnName: {}}];
-    };
+    shared.shouldBehaveLike('supporting callback interface',
+      _.assign({}, contextOpts, {
+        internalObject: dialect,
+        internalMethodName: 'addCollectionColumn',
+        run: function(cb) {
+          dsl.addColumn('fake_column', {columnName: {}}, cb);
+        }
+      })
+    );
 
-    shared.shouldBehaveLike('supporting callback interface', setupContext);
-
-    shared.shouldBehaveLike('supporting Promise interface', setupContext);
+    shared.shouldBehaveLike('supporting Promise interface',
+      _.assign({}, contextOpts, {
+        run: function() {
+          return dsl.addColumn('fake_column', {columnName: {}});
+        }
+      })
+    );
   });
 
   describe('MigrationDSL.prototype.renameColumn', function() {
-    var setupContext = function (opts) {
-      opts.testedObject       = dsl;
-      opts.testedMethodName   = 'renameColumn';
-      opts.internalObject     = dialect;
-      opts.internalMethodName ='renameCollectionColumn';
-      opts.internalMethodArgs = ['collection_name', 'old_name', 'new_name'];
+    var contextOpts = {
+      internalObject: dialect,
+      internalMethodName: 'renameCollectionColumn'
     };
 
-    shared.shouldBehaveLike('supporting callback interface', setupContext);
+    shared.shouldBehaveLike('supporting callback interface',
+      _.assign({}, contextOpts, {
+        run: function(cb) {
+          return dsl.renameColumn('collection_name', 'old_name', 'new_name', cb);
+        }
+      })
+    );
 
-    shared.shouldBehaveLike('supporting Promise interface', setupContext);
+    shared.shouldBehaveLike('supporting Promise interface',
+      _.assign({}, contextOpts, {
+        run: function() {
+          return dsl.renameColumn('fake_column', {columnName: {}});
+        }
+      })
+    );
   });
 
   describe('MigrationDSL.prototype.addIndex', function() {
-    var setupContext = function (opts) {
-      opts.testedObject       = dsl;
-      opts.testedMethodName   = 'addIndex';
-      opts.internalObject     = dialect;
-      opts.internalMethodName ='addIndex';
-      opts.internalMethodArgs = ['index_name', {}];
+    var contextOpts = {
+      internalObject: dialect,
+      internalMethodName: 'addIndex'
     };
 
-    shared.shouldBehaveLike('supporting callback interface', setupContext);
+    shared.shouldBehaveLike('supporting callback interface',
+      _.assign({}, contextOpts, {
+        run: function(cb) {
+          dsl.addIndex('index_name', {}, cb);
+        }
+      })
+    );
 
-    shared.shouldBehaveLike('supporting Promise interface', setupContext);
+    shared.shouldBehaveLike('supporting Promise interface',
+      _.assign({}, contextOpts, {
+        run: function() {
+          return dsl.addIndex('index_name', {});
+        }
+      })
+    );
   });
 
   describe('MigrationDSL.prototype.dropIndex', function() {
-    var setupContext = function (opts) {
-      opts.testedObject       = dsl;
-      opts.testedMethodName   = 'dropIndex';
-      opts.internalObject     = dialect;
-      opts.internalMethodName ='removeIndex';
-      opts.internalMethodArgs = ['index_name', {}];
+    var contextOpts = {
+      internalObject: dialect,
+      internalMethodName: 'removeIndex'
     };
 
-    shared.shouldBehaveLike('supporting callback interface', setupContext);
+    shared.shouldBehaveLike('supporting callback interface',
+      _.assign({}, contextOpts, {
+        run: function(cb) {
+          dsl.dropIndex('index_name', {}, cb);
+        }
+      })
+    );
 
-    shared.shouldBehaveLike('supporting Promise interface', setupContext);
+    shared.shouldBehaveLike('supporting Promise interface',
+      _.assign({}, contextOpts, {
+        run: function() {
+          return dsl.dropIndex('index_name', {});
+        }
+      })
+    );
   });
 
   describe('MigrationDSL.prototype.dropColumn', function() {
-    var setupContext = function (opts) {
-      opts.testedObject       = dsl;
-      opts.testedMethodName   = 'dropColumn';
-      opts.internalObject     = dialect;
-      opts.internalMethodName ='dropCollectionColumn';
-      opts.internalMethodArgs = ['collection_name', 'column_name'];
+    var contextOpts = {
+      internalObject: dialect,
+      internalMethodName: 'dropCollectionColumn'
     };
 
-    shared.shouldBehaveLike('supporting callback interface', setupContext);
+    shared.shouldBehaveLike('supporting callback interface',
+      _.assign({}, contextOpts, {
+        run: function(cb) {
+          dsl.dropColumn('collection_name', 'column_name', cb);
+        }
+      })
+    );
 
-    shared.shouldBehaveLike('supporting Promise interface', setupContext);
+    shared.shouldBehaveLike('supporting Promise interface',
+      _.assign({}, contextOpts, {
+        run: function() {
+          return dsl.dropColumn('collection_name', 'column_name');
+        }
+      })
+    );
   });
 
   describe('MigrationDSL.prototype.dropTable', function() {
-    var setupContext = function (opts) {
-      opts.testedObject       = dsl;
-      opts.testedMethodName   = 'dropTable';
-      opts.internalObject     = dialect;
-      opts.internalMethodName ='dropCollection';
-      opts.internalMethodArgs = ['collection_name'];
+    var contextOpts = {
+      internalObject: dialect,
+      internalMethodName: 'dropCollection'
     };
 
-    shared.shouldBehaveLike('supporting callback interface', setupContext);
+    shared.shouldBehaveLike('supporting callback interface',
+      _.assign({}, contextOpts, {
+        run: function(cb) {
+          dsl.dropTable('collection_name', cb);
+        }
+      })
+    );
 
-    shared.shouldBehaveLike('supporting Promise interface', setupContext);
+    shared.shouldBehaveLike('supporting Promise interface',
+      _.assign({}, contextOpts, {
+        run: function() {
+          return dsl.dropTable('collection_name');
+        }
+      })
+    );
   });
 
   describe('MigrationDSL.prototype.addPrimaryKey', function() {
-    var setupContext = function (opts) {
-      opts.testedObject       = dsl;
-      opts.testedMethodName   = 'addPrimaryKey';
-      opts.internalObject     = dialect;
-      opts.internalMethodName ='addPrimaryKey';
-      opts.internalMethodArgs = ['collection_name', 'column_name'];
+    var contextOpts = {
+      internalObject: dialect,
+      internalMethodName: 'addPrimaryKey'
     };
 
-    shared.shouldBehaveLike('supporting callback interface', setupContext);
+    shared.shouldBehaveLike('supporting callback interface',
+      _.assign({}, contextOpts, {
+        run: function(cb) {
+          dsl.addPrimaryKey('collection_name', 'column_name', cb);
+        }
+      })
+    );
 
-    shared.shouldBehaveLike('supporting Promise interface', setupContext);
+    shared.shouldBehaveLike('supporting Promise interface',
+      _.assign({}, contextOpts, {
+      run: function() {
+          return dsl.addPrimaryKey('collection_name', 'column_name');
+        }
+      })
+    );
   });
 
   describe('MigrationDSL.prototype.addForeignKey', function() {
-    var setupContext = function (opts) {
-      opts.testedObject       = dsl;
-      opts.testedMethodName   = 'addForeignKey';
-      opts.internalObject     = dialect;
-      opts.internalMethodName ='addForeignKey';
-      opts.internalMethodArgs = ['collection_name', {}];
+    var contextOpts = {
+      internalObject: dialect,
+      internalMethodName: 'addForeignKey'
     };
 
-    shared.shouldBehaveLike('supporting callback interface', setupContext);
+    shared.shouldBehaveLike('supporting callback interface',
+      _.assign({}, contextOpts, {
+        run: function(cb) {
+          return dsl.addForeignKey('collection_name', {}, cb);
+        }
+      })
+    );
 
-    shared.shouldBehaveLike('supporting Promise interface', setupContext);
+    shared.shouldBehaveLike('supporting Promise interface',
+      _.assign({}, contextOpts, {
+        run: function() {
+          return dsl.addForeignKey('collection_name', {});
+        }
+      })
+    );
   });
 
   describe('MigrationDSL.prototype.dropPrimaryKey', function() {
-    var setupContext = function (opts) {
-      opts.testedObject       = dsl;
-      opts.testedMethodName   = 'dropPrimaryKey';
-      opts.internalObject     = dialect;
-      opts.internalMethodName ='dropPrimaryKey';
-      opts.internalMethodArgs = ['collection_name','column_name'];
+    var contextOpts = {
+      internalObject: dialect,
+      internalMethodName: 'dropPrimaryKey'
     };
 
-    shared.shouldBehaveLike('supporting callback interface', setupContext);
+    shared.shouldBehaveLike('supporting callback interface',
+      _.assign({}, contextOpts, {
+        run: function(cb) {
+          dsl.dropPrimaryKey('collection_name', 'column_name', cb);
+        }
+      })
+    );
 
-    shared.shouldBehaveLike('supporting Promise interface', setupContext);
+    shared.shouldBehaveLike('supporting Promise interface',
+      _.assign({}, contextOpts, {
+        run: function() {
+          return dsl.dropPrimaryKey('collection_name', 'column_name');
+        }
+      })
+    );
   });
 
   describe('MigrationDSL.prototype.dropForeignKey', function() {
-    var setupContext = function (opts) {
-      opts.testedObject       = dsl;
-      opts.testedMethodName   = 'dropForeignKey';
-      opts.internalObject     = dialect;
-      opts.internalMethodName ='dropForeignKey';
-      opts.internalMethodArgs = ['collection_name','column_name'];
+    var contextOpts = {
+      internalObject: dialect,
+      internalMethodName: 'dropForeignKey'
     };
 
-    shared.shouldBehaveLike('supporting callback interface', setupContext);
+    shared.shouldBehaveLike('supporting callback interface',
+      _.assign({}, contextOpts, {
+        run: function(cb) {
+          dsl.dropForeignKey('collection_name', 'column_name', cb);
+        }
+      })
+    );
 
-    shared.shouldBehaveLike('supporting Promise interface', setupContext);
+    shared.shouldBehaveLike('supporting Promise interface',
+      _.assign({}, contextOpts, {
+        run: function() {
+          return dsl.dropForeignKey('collection_name', 'column_name');
+        }
+      })
+    );
   });
 
   describe('MigrationDSL.prototype.hasTable', function() {
-    var setupContext = function (opts) {
-      opts.testedObject       = dsl;
-      opts.testedMethodName   = 'hasTable';
-      opts.internalObject     = dialect;
-      opts.internalMethodName ='hasCollection';
-      opts.internalMethodArgs = ['collection_name'];
+    var contextOpts = {
+      internalObject: dialect,
+      internalMethodName: 'hasCollection'
     };
 
-    shared.shouldBehaveLike('supporting callback interface', setupContext);
+    shared.shouldBehaveLike('supporting callback interface',
+      _.assign({}, contextOpts, {
+        run: function(cb) {
+          dsl.hasTable('collection_name', cb);
+        }
+      })
+    );
 
-    shared.shouldBehaveLike('supporting Promise interface', setupContext);
+    shared.shouldBehaveLike('supporting Promise interface',
+      _.assign({}, contextOpts, {
+        run: function() {
+          return dsl.hasTable('collection_name');
+        }
+      })
+    );
   });
 
   describe('MigrationDSL.prototype.getColumns', function() {
-    var setupContext = function (opts) {
-      opts.testedObject       = dsl;
-      opts.testedMethodName   = 'getColumns';
-      opts.internalObject     = dialect;
-      opts.internalMethodName ='getCollectionProperties';
-      opts.internalMethodArgs = ['collection_name'];
+    var contextOpts = {
+      internalObject: dialect,
+      internalMethodName: 'getCollectionProperties'
     };
 
-    shared.shouldBehaveLike('supporting callback interface', setupContext);
+    shared.shouldBehaveLike('supporting callback interface',
+      _.assign({}, contextOpts, {
+        run: function(cb) {
+          dsl.getColumns('collection_name', cb);
+        }
+      })
+    );
 
-    shared.shouldBehaveLike('supporting Promise interface', setupContext);
+    shared.shouldBehaveLike('supporting Promise interface',
+      _.assign({}, contextOpts, {
+        run: function() {
+          return dsl.getColumns('collection_name');
+        }
+      })
+    );
   });
 
   describe('MigrationDSL.prototype.execQuery', function() {
-    var setupContext = function (opts) {
-      opts.testedObject       = dsl;
-      opts.testedMethodName   = 'execQuery';
-      opts.internalObject     = driver;
-      opts.internalMethodName ='execQuery';
-      opts.internalMethodArgs = ['collection_name', {}];
+    var contextOpts = {
+      internalObject: driver,
+      internalMethodName: 'execQuery'
     };
 
-    shared.shouldBehaveLike('supporting callback interface', setupContext);
+    shared.shouldBehaveLike('supporting callback interface',
+      _.assign({}, contextOpts, {
+        run: function(cb) {
+          dsl.execQuery('collection_name', {}, cb);
+        }
+      })
+    );
 
-    shared.shouldBehaveLike('supporting Promise interface', setupContext);
+    shared.shouldBehaveLike('supporting Promise interface',
+      _.assign({}, contextOpts, {
+        run: function() {
+          return dsl.execQuery('collection_name', {});
+        }
+      })
+    );
   });
+
 });
