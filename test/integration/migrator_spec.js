@@ -5,7 +5,7 @@ var _          = require('lodash');
 var fs         = require('fs');
 var path       = require('path');
 var helpers    = require('../helpers');
-var Task       = require('./../../');
+var Migrator       = require('./../../');
 var Promise    = require('bluebird');
 
 describe('Migrator', function() {
@@ -81,7 +81,7 @@ describe('Migrator', function() {
 
     //ensure the migration folder is cleared before each test
     beforeEach(function (done) {
-      task = new Task(conn, {dir: 'migrations'});
+      task = new Migrator(conn, {dir: 'migrations'});
       helpers.cleanupDbAndDir(conn, task.dir, ['table_promised'], function () {
         task.setup(function (err) {
           should.not.exist(err);
@@ -113,7 +113,7 @@ describe('Migrator', function() {
 
     //ensure the migration folder is cleared before each test
     beforeEach(function (done) {
-      task = new Task(conn, {dir: 'migrations'});
+      task = new Migrator(conn, {dir: 'migrations'});
       helpers.cleanupDbAndDir(conn, task.dir, ['table1', 'table2'], function () {
         task.setup(function (err) {
           should.not.exist(err);
@@ -155,7 +155,7 @@ describe('Migrator', function() {
         ], done);
       });
 
-      describe('Promise support', function () {
+      describe('Migrator.prototype.up Promise support', function () {
         it('runs two migrations successfully', function () {
           return task.up().then(function () {
             return Promise.all([
@@ -187,7 +187,7 @@ describe('Migrator', function() {
         ], done);
       });
 
-      describe('Promise support', function () {
+      describe('Migrator.prototype.down Promise support', function () {
         it('runs two migrations successfully', function () {
           return task.up()
             .then(function () {
@@ -251,7 +251,7 @@ describe('Migrator', function() {
       });
 
       it('generates a coffee migration', function (done) {
-        task = new Task(conn, {coffee: true});
+        task = new Migrator(conn, {coffee: true});
         task.generate('test1', function (err, filename) {
           var filePath = path.join(cwd, task.dir, filename + '.coffee');
           fs.statSync(filePath).isFile().should.be.true;
@@ -259,7 +259,7 @@ describe('Migrator', function() {
         });
       });
 
-      describe('Promise support', function () {
+      describe('Migrator.prototype.generate Promise support', function () {
         it('generates a migration', function () {
           return task.generate('test1')
             .then(function (filename) {
