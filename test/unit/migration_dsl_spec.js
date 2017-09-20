@@ -1,16 +1,16 @@
 "use strict";
-const _             = require('lodash');
-const should        = require('should');
-const sinon         = require('sinon');
-const sandbox       = sinon.sandbox.create();
+var _             = require('lodash');
+var should        = require('should');
+var sinon         = require('sinon');
+var sandbox       = sinon.sandbox.create();
 
-const MigrationDSL  = require('../../lib/migration-dsl');
+var MigrationDSL  = require('../../lib/migration-dsl');
 
 
-const fake = {
-  object: () => { return {} },
+var fake = {
+  object: function () { return {} },
 
-  dialect: () => {
+  dialect: function () {
     return {
       addCollectionColumn: _.noop,
       createCollection: _.noop,
@@ -28,7 +28,7 @@ const fake = {
     };
   },
 
-  driver: (dialect) => {
+  driver: function (dialect) {
     return {
       dialect: dialect,
       query: {
@@ -38,49 +38,49 @@ const fake = {
     }
   },
 
-  dsl: (driver) => {
+  dsl: function (driver) {
     return new MigrationDSL(driver);
   }
 };
 
 describe('MigrationDSL', function() {
 
-  const dialect = fake.dialect();
-  const driver = fake.driver(dialect);
-  let dsl;
+  var dialect = fake.dialect();
+  var driver = fake.driver(dialect);
+  var dsl;
 
-  beforeEach(() => {
-    sandbox.stub(require("sql-ddl-sync"), 'dialect').callsFake(() => dialect);
+  beforeEach(function () {
+    sandbox.stub(require("sql-ddl-sync"), 'dialect').callsFake(function () { return dialect; });
     dsl = fake.dsl(driver);
   });
 
-  afterEach(() => {
+  afterEach(function () {
     sandbox.verify();
     sandbox.restore();
   });
 
   describe('MigrationDSL.prototype.createTable', function() {
-    beforeEach(() => {
+    beforeEach(function () {
       sandbox.stub(dialect, 'createCollection').yields(null, 123);
     });
 
-    describe('Callback support', () => {
-      it('calls the passed callback', (done) => {
-        const cb = sandbox.mock();
+    describe('Callback support', function () {
+      it('calls the passed callback', function (done) {
+        var cb = sandbox.mock();
         cb.callsFake(done);
 
         cb.once().withArgs(null, 123);
 
-        const noColumns = {};
+        var noColumns = {};
         dsl.createTable('fake_table', noColumns, cb);
       });
     });
 
-    describe('Promise support', () => {
-      it('returns Promise unless callback is specified', () => {
-        const noColumns = {};
+    describe('Promise support', function () {
+      it('returns Promise unless callback is specified', function () {
+        var noColumns = {};
         return dsl.createTable('fake_table', noColumns)
-          .then((val) => {
+          .then(function (val) {
             val.should.be.equal(123);
           });
       });
@@ -88,14 +88,14 @@ describe('MigrationDSL', function() {
   });
 
   describe('MigrationDSL.prototype.addColumn', function() {
-    beforeEach(() => {
-      sandbox.stub(dsl, '_createColumn').callsFake(() =>  { return fake.object() });
+    beforeEach(function () {
+      sandbox.stub(dsl, '_createColumn').callsFake(function ()  { return fake.object() });
       sandbox.stub(dialect, 'addCollectionColumn').yields(null, 123);
     });
 
-    describe('Callback support', () => {
-      it('calls the passed callback', (done) => {
-        const cb = sandbox.mock();
+    describe('Callback support', function () {
+      it('calls the passed callback', function (done) {
+        var cb = sandbox.mock();
         cb.callsFake(done);
 
         cb.once().withArgs(null, 123);
@@ -104,10 +104,10 @@ describe('MigrationDSL', function() {
       });
     });
 
-    describe('Promise support', () => {
-      it('returns Promise unless callback is specified', () => {
+    describe('Promise support', function () {
+      it('returns Promise unless callback is specified', function () {
         return dsl.addColumn(fake.object(), {columnName: fake.object()})
-          .then((val) => {
+          .then(function (val) {
             val.should.be.equal(123);
           });
       });
@@ -115,13 +115,13 @@ describe('MigrationDSL', function() {
   });
 
   describe('MigrationDSL.prototype.renameColumn', function() {
-    beforeEach(() => {
+    beforeEach(function () {
       sandbox.stub(dialect, 'renameCollectionColumn').yields(null, 123);
     });
 
-    describe('Callback support', () => {
-      it('calls the passed callback', (done) => {
-        const cb = sandbox.mock();
+    describe('Callback support', function () {
+      it('calls the passed callback', function (done) {
+        var cb = sandbox.mock();
         cb.callsFake(done);
 
         cb.once().withArgs(null, 123);
@@ -130,10 +130,10 @@ describe('MigrationDSL', function() {
       });
     });
 
-    describe('Promise support', () => {
-      it('returns Promise unless callback is specified', () => {
+    describe('Promise support', function () {
+      it('returns Promise unless callback is specified', function () {
         return dsl.renameColumn('collection_name', 'old_name', 'new_name')
-          .then((val) => {
+          .then(function (val) {
             val.should.be.equal(123);
           });
       });
@@ -141,26 +141,26 @@ describe('MigrationDSL', function() {
   });
 
   describe('MigrationDSL.prototype.addIndex', function() {
-    beforeEach(() => {
+    beforeEach(function () {
       sandbox.stub(dialect, 'addIndex').yields(null, 123);
     });
 
-    describe('Callback support', () => {
-      it('calls the passed callback', (done) => {
-        const cb = sandbox.mock();
+    describe('Callback support', function () {
+      it('calls the passed callback', function (done) {
+        var cb = sandbox.mock();
         cb.callsFake(done);
 
         cb.once().withArgs(null, 123);
-        const emptyOptions = {};
+        var emptyOptions = {};
         dsl.addIndex('index_name', emptyOptions, cb);
       });
     });
 
-    describe('Promise support', () => {
-      it('returns Promise unless callback is specified', () => {
-        const emptyOptions = {};
+    describe('Promise support', function () {
+      it('returns Promise unless callback is specified', function () {
+        var emptyOptions = {};
         return dsl.addIndex('index_name', emptyOptions)
-          .then((val) => {
+          .then(function (val) {
             val.should.be.equal(123);
           });
       });
@@ -168,26 +168,26 @@ describe('MigrationDSL', function() {
   });
 
   describe('MigrationDSL.prototype.dropIndex', function() {
-    beforeEach(() => {
+    beforeEach(function () {
       sandbox.stub(dialect, 'removeIndex').yields(null, 123);
     });
 
-    describe('Callback support', () => {
-      it('calls the passed callback', (done) => {
-        const cb = sandbox.mock();
+    describe('Callback support', function () {
+      it('calls the passed callback', function (done) {
+        var cb = sandbox.mock();
         cb.callsFake(done);
 
         cb.once().withArgs(null, 123);
-        const emptyOptions = {};
+        var emptyOptions = {};
         dsl.dropIndex('index_name', emptyOptions, cb);
       });
     });
 
-    describe('Promise support', () => {
-      it('returns Promise unless callback is specified', () => {
-        const emptyOptions = {};
+    describe('Promise support', function () {
+      it('returns Promise unless callback is specified', function () {
+        var emptyOptions = {};
         return dsl.dropIndex('index_name', emptyOptions)
-          .then((val) => {
+          .then(function (val) {
             val.should.be.equal(123);
           });
       });
@@ -195,13 +195,13 @@ describe('MigrationDSL', function() {
   });
 
   describe('MigrationDSL.prototype.dropColumn', function() {
-    beforeEach(() => {
+    beforeEach(function () {
       sandbox.stub(dialect, 'dropCollectionColumn').yields(null, 123);
     });
 
-    describe('Callback support', () => {
-      it('calls the passed callback', (done) => {
-        const cb = sandbox.mock();
+    describe('Callback support', function () {
+      it('calls the passed callback', function (done) {
+        var cb = sandbox.mock();
         cb.callsFake(done);
 
         cb.once().withArgs(null, 123);
@@ -209,10 +209,10 @@ describe('MigrationDSL', function() {
       });
     });
 
-    describe('Promise support', () => {
-      it('returns Promise unless callback is specified', () => {
+    describe('Promise support', function () {
+      it('returns Promise unless callback is specified', function () {
         dsl.dropColumn('collection_name', 'column_name')
-          .then((val) => {
+          .then(function (val) {
             val.should.be.equal(123);
           });
       });
@@ -220,13 +220,13 @@ describe('MigrationDSL', function() {
   });
 
   describe('MigrationDSL.prototype.dropTable', function() {
-    beforeEach(() => {
+    beforeEach(function () {
       sandbox.stub(dialect, 'dropCollection').yields(null, 123);
     });
 
-    describe('Callback support', () => {
-      it('calls the passed callback', (done) => {
-        const cb = sandbox.mock();
+    describe('Callback support', function () {
+      it('calls the passed callback', function (done) {
+        var cb = sandbox.mock();
         cb.callsFake(done);
 
         cb.once().withArgs(null, 123);
@@ -234,10 +234,10 @@ describe('MigrationDSL', function() {
       });
     });
 
-    describe('Promise support', () => {
-      it('returns Promise unless callback is specified', () => {
+    describe('Promise support', function () {
+      it('returns Promise unless callback is specified', function () {
         dsl.dropColumn('collection_name')
-          .then((val) => {
+          .then(function (val) {
             val.should.be.equal(123);
           });
       });
@@ -245,13 +245,13 @@ describe('MigrationDSL', function() {
   });
 
   describe('MigrationDSL.prototype.addPrimaryKey', function() {
-    beforeEach(() => {
+    beforeEach(function () {
       sandbox.stub(dialect, 'addPrimaryKey').yields(null, 123);
     });
 
-    describe('Callback support', () => {
-      it('calls the passed callback', (done) => {
-        const cb = sandbox.mock();
+    describe('Callback support', function () {
+      it('calls the passed callback', function (done) {
+        var cb = sandbox.mock();
         cb.callsFake(done);
 
         cb.once().withArgs(null, 123);
@@ -259,10 +259,10 @@ describe('MigrationDSL', function() {
       });
     });
 
-    describe('Promise support', () => {
-      it('returns Promise unless callback is specified', () => {
+    describe('Promise support', function () {
+      it('returns Promise unless callback is specified', function () {
         return dsl.addPrimaryKey('collection_name', 'column_name')
-          .then((val) => {
+          .then(function (val) {
             val.should.be.equal(123);
           });
       });
@@ -270,28 +270,28 @@ describe('MigrationDSL', function() {
   });
 
   describe('MigrationDSL.prototype.addForeignKey', function() {
-    beforeEach(() => {
+    beforeEach(function () {
       sandbox.stub(dialect, 'addForeignKey').yields(null, 123);
     });
 
-    describe('Callback support', () => {
-      it('calls the passed callback', (done) => {
-        const cb = sandbox.mock();
+    describe('Callback support', function () {
+      it('calls the passed callback', function (done) {
+        var cb = sandbox.mock();
         cb.callsFake(done);
 
         cb.once().withArgs(null, 123);
 
-        const emptyOptions = {};
+        var emptyOptions = {};
 
         dsl.addForeignKey('collection_name', emptyOptions, cb);
       });
     });
 
-    describe('Promise support', () => {
-      it('returns Promise unless callback is specified', () => {
-        const emptyOptions = {};
+    describe('Promise support', function () {
+      it('returns Promise unless callback is specified', function () {
+        var emptyOptions = {};
         return dsl.addForeignKey('collection_name', emptyOptions)
-          .then((val) => {
+          .then(function (val) {
             val.should.be.equal(123);
           });
       });
@@ -299,28 +299,28 @@ describe('MigrationDSL', function() {
   });
 
   describe('MigrationDSL.prototype.dropPrimaryKey', function() {
-    beforeEach(() => {
+    beforeEach(function () {
       sandbox.stub(dialect, 'dropPrimaryKey').yields(null, 123);
     });
 
-    describe('Callback support', () => {
-      it('calls the passed callback', (done) => {
-        const cb = sandbox.mock();
+    describe('Callback support', function () {
+      it('calls the passed callback', function (done) {
+        var cb = sandbox.mock();
         cb.callsFake(done);
 
         cb.once().withArgs(null, 123);
 
-        const emptyOptions = {};
+        var emptyOptions = {};
 
         dsl.dropPrimaryKey('collection_name', emptyOptions, cb);
       });
     });
 
-    describe('Promise support', () => {
-      it('returns Promise unless callback is specified', () => {
-        const emptyOptions = {};
+    describe('Promise support', function () {
+      it('returns Promise unless callback is specified', function () {
+        var emptyOptions = {};
         return dsl.dropPrimaryKey('collection_name', emptyOptions)
-          .then((val) => {
+          .then(function (val) {
             val.should.be.equal(123);
           });
       });
@@ -328,28 +328,28 @@ describe('MigrationDSL', function() {
   });
 
   describe('MigrationDSL.prototype.dropForeignKey', function() {
-    beforeEach(() => {
+    beforeEach(function () {
       sandbox.stub(dialect, 'dropForeignKey').yields(null, 123);
     });
 
-    describe('Callback support', () => {
-      it('calls the passed callback', (done) => {
-        const cb = sandbox.mock();
+    describe('Callback support', function () {
+      it('calls the passed callback', function (done) {
+        var cb = sandbox.mock();
         cb.callsFake(done);
 
         cb.once().withArgs(null, 123);
 
-        const emptyOptions = {};
+        var emptyOptions = {};
 
         dsl.dropForeignKey('collection_name', emptyOptions, cb);
       });
     });
 
-    describe('Promise support', () => {
-      it('returns Promise unless callback is specified', () => {
-        const emptyOptions = {};
+    describe('Promise support', function () {
+      it('returns Promise unless callback is specified', function () {
+        var emptyOptions = {};
         return dsl.dropForeignKey('collection_name', emptyOptions)
-          .then((val) => {
+          .then(function (val) {
             val.should.be.equal(123);
           });
       });
@@ -357,13 +357,13 @@ describe('MigrationDSL', function() {
   });
 
   describe('MigrationDSL.prototype.hasTable', function() {
-    beforeEach(() => {
+    beforeEach(function () {
       sandbox.stub(dialect, 'hasCollection').yields(null, 123);
     });
 
-    describe('Callback support', () => {
-      it('calls the passed callback', (done) => {
-        const cb = sandbox.mock();
+    describe('Callback support', function () {
+      it('calls the passed callback', function (done) {
+        var cb = sandbox.mock();
         cb.callsFake(done);
 
         cb.once().withArgs(null, 123);
@@ -372,10 +372,10 @@ describe('MigrationDSL', function() {
       });
     });
 
-    describe('Promise support', () => {
-      it('returns Promise unless callback is specified', () => {
+    describe('Promise support', function () {
+      it('returns Promise unless callback is specified', function () {
         return dsl.hasTable('collection_name')
-          .then((val) => {
+          .then(function (val) {
             val.should.be.equal(123);
           });
       });
@@ -383,13 +383,13 @@ describe('MigrationDSL', function() {
   });
 
   describe('MigrationDSL.prototype.getColumns', function() {
-    beforeEach(() => {
+    beforeEach(function () {
       sandbox.stub(dialect, 'getCollectionProperties').yields(null, 123);
     });
 
-    describe('Callback support', () => {
-      it('calls the passed callback', (done) => {
-        const cb = sandbox.mock();
+    describe('Callback support', function () {
+      it('calls the passed callback', function (done) {
+        var cb = sandbox.mock();
         cb.callsFake(done);
 
         cb.once().withArgs(null, 123);
@@ -398,10 +398,10 @@ describe('MigrationDSL', function() {
       });
     });
 
-    describe('Promise support', () => {
-      it('returns Promise unless callback is specified', () => {
+    describe('Promise support', function () {
+      it('returns Promise unless callback is specified', function () {
         return dsl.getColumns('collection_name')
-          .then((val) => {
+          .then(function (val) {
             val.should.be.equal(123);
           });
       });
@@ -409,27 +409,27 @@ describe('MigrationDSL', function() {
   });
 
   describe('MigrationDSL.prototype.execQuery', function() {
-    beforeEach(() => {
+    beforeEach(function () {
       sandbox.stub(driver, 'execQuery').yields(null, 123);
     });
 
-    describe('Callback support', () => {
-      it('calls the passed callback', (done) => {
-        const cb = sandbox.mock();
+    describe('Callback support', function () {
+      it('calls the passed callback', function (done) {
+        var cb = sandbox.mock();
         cb.callsFake(done);
 
         cb.once().withArgs(null, 123);
 
-        const emptyOptions = {};
+        var emptyOptions = {};
         dsl.execQuery('collection_name', emptyOptions, cb);
       });
     });
 
-    describe('Promise support', () => {
-      it('returns Promise unless callback is specified', () => {
-        const emptyOptions = {};
+    describe('Promise support', function () {
+      it('returns Promise unless callback is specified', function () {
+        var emptyOptions = {};
         return dsl.execQuery('collection_name', emptyOptions)
-          .then((val) => {
+          .then(function (val) {
             val.should.be.equal(123);
           });
       });

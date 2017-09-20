@@ -6,7 +6,7 @@ var fs         = require('fs');
 var path       = require('path');
 var helpers    = require('../helpers');
 var Task       = require('./../../');
-const Promise  = require('bluebird');
+var Promise    = require('bluebird');
 
 describe('Migrator', function() {
 
@@ -22,7 +22,7 @@ describe('Migrator', function() {
       cb();
     });
   };
-  const hasMigrationsAsync = Promise.promisify(hasMigrations);
+  var hasMigrationsAsync = Promise.promisify(hasMigrations);
 
   var SELECT_COLUMN = 'SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name = ? AND column_name = ?';
   var hasColumn = function (table, column, cb) {
@@ -32,7 +32,7 @@ describe('Migrator', function() {
       cb();
     });
   };
-  const hasColumnAsync = Promise.promisify(hasColumn);
+  var hasColumnAsync = Promise.promisify(hasColumn);
 
   var SELECT_TABLE = 'SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE table_name = ?';
   var hasTable = function (table, cb) {
@@ -50,7 +50,7 @@ describe('Migrator', function() {
       cb();
     });
   };
-  const hasNoTableAsync = Promise.promisify(hasNoTable);
+  var hasNoTableAsync = Promise.promisify(hasNoTable);
 
   before(function (done) {
     helpers.connect(function (err, connection) {
@@ -93,13 +93,13 @@ describe('Migrator', function() {
 
     it('runs down migrations using name (including)', function () {
       return task.up()
-        .then(() => {
+        .then(function () {
           return hasMigrationsAsync(1);
         })
-        .then(() => {
+        .then(function () {
           return task.down('001-create-table1-promised.js');
         })
-        .then(() => {
+        .then(function () {
           return Promise.all([
             hasMigrationsAsync(0),
             hasNoTableAsync('table-promised')
@@ -155,9 +155,9 @@ describe('Migrator', function() {
         ], done);
       });
 
-      describe('Promise support', () => {
-        it('runs two migrations successfully', () => {
-          return task.up().then(() => {
+      describe('Promise support', function () {
+        it('runs two migrations successfully', function () {
+          return task.up().then(function () {
             return Promise.all([
               hasColumnAsync('table1', 'wobble'),
               hasColumnAsync('table1', 'wibble')
@@ -187,16 +187,16 @@ describe('Migrator', function() {
         ], done);
       });
 
-      describe('Promise support', () => {
-        it('runs two migrations successfully', () => {
+      describe('Promise support', function () {
+        it('runs two migrations successfully', function () {
           return task.up()
-            .then(() => {
+            .then(function () {
               return hasMigrationsAsync(2);
             })
-            .then(() => {
+            .then(function () {
               return task.down('001-create-table1.js');
             })
-            .then(() => {
+            .then(function () {
               return Promise.all([
                 hasMigrationsAsync(0),
                 hasNoTableAsync('table1')
@@ -259,10 +259,10 @@ describe('Migrator', function() {
         });
       });
 
-      describe('Promise support', () => {
-        it('generates a migration', () => {
+      describe('Promise support', function () {
+        it('generates a migration', function () {
           return task.generate('test1')
-            .then((filename) => {
+            .then(function (filename) {
               var filePath = path.join(cwd, task.dir, filename + '.js');
               fs.statSync(filePath).isFile().should.be.true;
             })
@@ -270,7 +270,7 @@ describe('Migrator', function() {
       });
     });
 
-    describe('#setup', function (done) {
+    describe('#setup', function () {
       beforeEach(function () {
         sinon.spy(task, 'setup');
       });
@@ -279,7 +279,7 @@ describe('Migrator', function() {
         task.setup.restore();
       });
 
-      it('creates the migrtion folder', function (done) {
+      it('creates the migration folder', function (done) {
         var dirPath = path.join(cwd, task.dir);
         fs.statSync(dirPath).isDirectory().should.be.true;
         done();
