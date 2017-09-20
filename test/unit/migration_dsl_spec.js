@@ -2,6 +2,7 @@
 var should        = require('should');
 var sinon         = require('sinon');
 var sandbox       = sinon.sandbox.create();
+var shared        = require('shared-examples-for');
 
 var MigrationDSL  = require('../../lib/migration-dsl');
 
@@ -9,7 +10,7 @@ var noop = function(){};
 
 var fake = {
   object: function () { return {} },
-  
+
   dialect: function () {
     return {
       addCollectionColumn: noop,
@@ -43,11 +44,154 @@ var fake = {
   }
 };
 
+shared.examplesFor('supporting callback interface', function(setupContextFunc) {
+  if(typeof(setupContextFunc) !== 'function') { throw '`setupContextFunc` is required!';  }
+  var opts;
+  var sandbox = sinon.sandbox.create();
+
+  describe('Callback interface', function() {
+    beforeEach('Setup context', function () {
+      setupContextFunc(opts = {});
+
+      if (!opts.testedObject) {
+        throw '`testedObject`option is required!';
+      }
+      if (!opts.testedMethodName) {
+        throw '`testedMethodName`option is required!';
+      }
+      if (!opts.internalObject) {
+        throw '`internalObject`option is required!';
+      }
+      if (!opts.internalMethodName) {
+        throw '`internalMethodName`option is required!';
+      }
+      if (opts.internalMethodArgs && !Array.isArray(opts.internalMethodArgs)) {
+        throw '`InternalMethodArgs` option must be Array!';
+      }
+    });
+
+    afterEach(function () {
+      sandbox.verifyAndRestore();
+    });
+
+    var internalCallArgs = function (cb) {
+      var args = [];
+
+      if (opts.internalMethodArgs) {
+        args = args.concat(opts.internalMethodArgs);
+      }
+
+      if (cb) {
+        args.push(cb);
+      }
+
+      return args;
+    };
+
+    describe('optimistic case', function () {
+
+      beforeEach('stub internal call', function () {
+        sandbox.stub(opts.internalObject, opts.internalMethodName).yields(null, 123);
+      });
+
+
+      it('calls the passed callback', function (done) {
+        var cb = sandbox.mock();
+        cb.callsFake(done);
+
+        cb.once().withArgs(null, 123);
+
+        opts.testedObject[opts.testedMethodName].apply(opts.testedObject, internalCallArgs(cb));
+      });
+    });
+
+    describe('error case', function () {
+      beforeEach(function () {
+        sandbox.stub(opts.internalObject, opts.internalMethodName).yields(new Error('problem'));
+      });
+
+      it('transfer error to the passed callback', function (done) {
+        var cb = sandbox.mock();
+        cb.callsFake(function () {
+          done()
+        });
+
+        cb.once().withArgs(sinon.match.instanceOf(Error).and(sinon.match.has('message', 'problem')));
+
+        opts.testedObject[opts.testedMethodName].apply(opts.testedObject, internalCallArgs(cb));
+      });
+    });
+  })
+});
+
+shared.examplesFor('supporting Promise interface', function(setupContextFunc) {
+  if(typeof(setupContextFunc) !== 'function') { throw '`setupContextFunc` is required!';  }
+  var opts;
+  var sandbox = sinon.sandbox.create();
+
+  describe('Promise interface', function () {
+
+    beforeEach('Setup context', function () {
+      setupContextFunc(opts = {});
+      if (!opts.testedObject) {
+        throw '`testedObject`option is required!';
+      }
+      if (!opts.testedMethodName) {
+        throw '`testedMethodName`option is required!';
+      }
+      if (!opts.internalObject) {
+        throw '`internalObject`option is required!';
+      }
+      if (!opts.internalMethodName) {
+        throw '`internalMethodName`option is required!';
+      }
+      if (opts.internalMethodArgs && !Array.isArray(opts.internalMethodArgs)) {
+        throw '`InternalMethodArgs` option must be Array!';
+      }
+    });
+
+    afterEach(function () {
+      sandbox.verifyAndRestore();
+    });
+
+    describe('optimistic case', function () {
+      beforeEach(function () {
+        sandbox.stub(opts.internalObject, opts.internalMethodName).yields(null, 123);
+      });
+
+      it('returns Promise unless callback is specified', function () {
+        return opts.testedObject[opts.testedMethodName].apply(opts.testedObject, opts.internalMethodArgs)
+          .then(function (val) {
+            val.should.be.equal(123);
+          });
+      });
+    });
+
+    describe('error case', function () {
+      beforeEach(function () {
+        sandbox.stub(opts.internalObject, opts.internalMethodName).yields(new Error('problem'));
+      });
+
+      it('returns rejected Promise unless callback is specified', function () {
+        return opts.testedObject[opts.testedMethodName].apply(opts.testedObject, opts.internalMethodArgs)
+          .catch(function (err) {
+            err.should.be.instanceOf(Error);
+            err.message.should.equal('problem');
+          });
+      });
+    });
+  });
+});
+
 describe('MigrationDSL', function() {
 
   var dialect = fake.dialect();
   var driver = fake.driver(dialect);
   var dsl;
+
+  beforeEach(function () {
+    this.currentTestOptions = {};
+  });
 
   beforeEach(function () {
     sandbox.stub(require("sql-ddl-sync"), 'dialect').callsFake(function () { return dialect; });
@@ -60,689 +204,203 @@ describe('MigrationDSL', function() {
   });
 
   describe('MigrationDSL.prototype.createTable', function() {
+      var setupContext = function (opts) {
+      opts.testedObject       = dsl;
+      opts.testedMethodName   = 'createTable';
+      opts.internalObject     = dialect;
+      opts.internalMethodName ='createCollection';
+      opts.internalMethodArgs = ['collection_name', {}];
+    };
 
-    describe('optimistic case', function() {
-      beforeEach(function() {
-        sandbox.stub(dialect, 'createCollection').yields(null, 123);
-      });
+    shared.shouldBehaveLike('supporting callback interface', setupContext);
 
-      it('calls the passed callback', function (done) {
-        var cb = sandbox.mock();
-        cb.callsFake(done);
-
-        cb.once().withArgs(null, 123);
-
-        var noMatterOptions = {};
-        dsl.createTable('fake_table', noMatterOptions, cb);
-      });
-
-      it('returns Promise unless callback is specified', function () {
-        var noMatterOptions = {};
-        return dsl.createTable('fake_table', noMatterOptions)
-          .then(function (val) {
-            val.should.be.equal(123);
-          });
-      });
-    });
-
-    describe('error case', function() {
-      beforeEach(function() {
-        sandbox.stub(dialect, 'createCollection').yields(new Error('problem'));
-      });
-
-      it('transfer error to the passed callback', function (done) {
-        var cb = sandbox.mock();
-        cb.callsFake(function () { done() });
-
-        cb.once().withArgs( sinon.match.instanceOf(Error).and(sinon.match.has('message', 'problem')) );
-
-        var noMatterOptions = {};
-        dsl.createTable('fake_table', noMatterOptions, cb);
-      });
-
-      it('returns rejected Promise unless callback is specified', function () {
-        var noMatterOptions = {};
-        return dsl.createTable('fake_table', noMatterOptions)
-          .catch(function (err) {
-            err.should.be.instanceOf(Error);
-            err.message.should.equal('problem');
-          });
-      });
-    });
+    shared.shouldBehaveLike('supporting Promise interface', setupContext);
   });
 
   describe('MigrationDSL.prototype.addColumn', function() {
+
     beforeEach(function () {
       sandbox.stub(dsl, '_createColumn').callsFake(function ()  { return fake.object() });
     });
 
-    describe('optimistic case', function() {
-      beforeEach(function () {
-        sandbox.stub(dialect, 'addCollectionColumn').yields(null, 123);
-      });
+    var setupContext = function (opts) {
+      opts.testedObject       = dsl;
+      opts.testedMethodName   = 'addColumn';
+      opts.internalObject     = dialect;
+      opts.internalMethodName ='addCollectionColumn';
+      opts.internalMethodArgs = ['fake_column', {columnName: {}}];
+    };
 
-      it('calls the passed callback', function (done) {
-        var cb = sandbox.mock();
-        cb.callsFake(done);
+    shared.shouldBehaveLike('supporting callback interface', setupContext);
 
-        cb.once().withArgs(null, 123);
-
-        dsl.addColumn('fake_column', {columnName: fake.object()}, cb);
-      });
-
-      it('returns Promise unless callback is specified', function () {
-        return dsl.addColumn(fake.object(), {columnName: fake.object()})
-          .then(function (val) {
-            val.should.be.equal(123);
-          });
-      });
-    });
-
-    describe('error case', function() {
-      beforeEach(function() {
-        sandbox.stub(dialect, 'addCollectionColumn').yields(new Error('problem'));
-      });
-
-      it('transfer error to the passed callback', function (done) {
-        var cb = sandbox.mock();
-        cb.callsFake(function () { done() });
-
-        cb.once().withArgs(sinon.match.instanceOf(Error).and(sinon.match.has('message', 'problem')));
-
-        dsl.addColumn('fake_column', {columnName: fake.object()}, cb);
-      });
-
-      it('returns rejected Promise unless callback is specified', function () {
-        return dsl.addColumn('fake_column', {columnName: fake.object()})
-          .catch(function (err) {
-            err.should.be.instanceOf(Error);
-            err.message.should.equal('problem');
-          });
-      });
-    });
+    shared.shouldBehaveLike('supporting Promise interface', setupContext);
   });
 
   describe('MigrationDSL.prototype.renameColumn', function() {
-    describe('optimistic case', function() {
-      beforeEach(function () {
-        sandbox.stub(dialect, 'renameCollectionColumn').yields(null, 123);
-      });
+    var setupContext = function (opts) {
+      opts.testedObject       = dsl;
+      opts.testedMethodName   = 'renameColumn';
+      opts.internalObject     = dialect;
+      opts.internalMethodName ='renameCollectionColumn';
+      opts.internalMethodArgs = ['collection_name', 'old_name', 'new_name'];
+    };
 
-      it('calls the passed callback', function (done) {
-        var cb = sandbox.mock();
-        cb.callsFake(done);
+    shared.shouldBehaveLike('supporting callback interface', setupContext);
 
-        cb.once().withArgs(null, 123);
-
-        dsl.renameColumn('collection_name', 'old_name', 'new_name', cb);
-      });
-
-      it('returns Promise unless callback is specified', function () {
-        return dsl.renameColumn('collection_name', 'old_name', 'new_name')
-          .then(function (val) {
-            val.should.be.equal(123);
-          });
-      });
-    });
-
-    describe('error case', function() {
-      beforeEach(function() {
-        sandbox.stub(dialect, 'renameCollectionColumn').yields(new Error('problem'));
-      });
-
-      it('transfer error to the passed callback', function (done) {
-        var cb = sandbox.mock();
-        cb.callsFake(function () { done() });
-
-        cb.once().withArgs( sinon.match.instanceOf(Error).and(sinon.match.has('message', 'problem')) );
-
-        dsl.renameColumn('collection_name', 'old_name', 'new_name', cb);
-      });
-
-      it('returns rejected Promise unless callback is specified', function () {
-        return dsl.renameColumn('collection_name', 'old_name', 'new_name')
-          .catch(function (err) {
-            err.should.be.instanceOf(Error);
-            err.message.should.equal('problem');
-          });
-      });
-    })
+    shared.shouldBehaveLike('supporting Promise interface', setupContext);
   });
 
   describe('MigrationDSL.prototype.addIndex', function() {
-    describe('optimistic case', function() {
-      beforeEach(function () {
-        sandbox.stub(dialect, 'addIndex').yields(null, 123);
-      });
+    var setupContext = function (opts) {
+      opts.testedObject       = dsl;
+      opts.testedMethodName   = 'addIndex';
+      opts.internalObject     = dialect;
+      opts.internalMethodName ='addIndex';
+      opts.internalMethodArgs = ['index_name', {}];
+    };
 
-      it('calls the passed callback', function (done) {
-        var cb = sandbox.mock();
-        cb.callsFake(done);
+    shared.shouldBehaveLike('supporting callback interface', setupContext);
 
-        cb.once().withArgs(null, 123);
-        var noMatterOptions = {};
-        dsl.addIndex('index_name', noMatterOptions, cb);
-      });
-
-      it('returns Promise unless callback is specified', function () {
-        var noMatterOptions = {};
-        return dsl.addIndex('index_name', noMatterOptions)
-          .then(function (val) {
-            val.should.be.equal(123);
-          });
-      });
-    });
-
-    describe('error case', function() {
-      beforeEach(function() {
-        sandbox.stub(dialect, 'addIndex').yields(new Error('problem'));
-      });
-
-      it('transfer error to the passed callback', function (done) {
-        var cb = sandbox.mock();
-        cb.callsFake(function () { done() });
-
-        cb.once().withArgs( sinon.match.instanceOf(Error).and(sinon.match.has('message', 'problem')) );
-
-        var noMatterOptions = {};
-        dsl.addIndex('index_name', noMatterOptions, cb);
-      });
-
-      it('returns rejected Promise unless callback is specified', function () {
-        var noMatterOptions = {};
-        return dsl.addIndex('index_name', noMatterOptions)
-          .catch(function (err) {
-            err.should.be.instanceOf(Error);
-            err.message.should.equal('problem');
-          });
-      });
-    });
+    shared.shouldBehaveLike('supporting Promise interface', setupContext);
   });
 
   describe('MigrationDSL.prototype.dropIndex', function() {
-    describe('optimistic case', function() {
-      beforeEach(function () {
-        sandbox.stub(dialect, 'removeIndex').yields(null, 123);
-      });
+    var setupContext = function (opts) {
+      opts.testedObject       = dsl;
+      opts.testedMethodName   = 'dropIndex';
+      opts.internalObject     = dialect;
+      opts.internalMethodName ='removeIndex';
+      opts.internalMethodArgs = ['index_name', {}];
+    };
 
-      it('calls the passed callback', function (done) {
-        var cb = sandbox.mock();
-        cb.callsFake(done);
+    shared.shouldBehaveLike('supporting callback interface', setupContext);
 
-        cb.once().withArgs(null, 123);
-        var noMatterOptions = {};
-        dsl.dropIndex('index_name', noMatterOptions, cb);
-      });
-
-      it('returns Promise unless callback is specified', function () {
-        var noMatterOptions = {};
-        return dsl.dropIndex('index_name', noMatterOptions)
-          .then(function (val) {
-            val.should.be.equal(123);
-          });
-      });
-    });
-
-    describe('error case', function() {
-      beforeEach(function() {
-        sandbox.stub(dialect, 'removeIndex').yields(new Error('problem'));
-      });
-
-      it('transfer error to the passed callback', function (done) {
-        var cb = sandbox.mock();
-        cb.callsFake(function () { done() });
-
-        cb.once().withArgs( sinon.match.instanceOf(Error).and(sinon.match.has('message', 'problem')) );
-
-        var noMatterOptions = {};
-        dsl.dropIndex('index_name', noMatterOptions, cb)
-      });
-
-      it('returns rejected Promise unless callback is specified', function () {
-        var noMatterOptions = {};
-        return dsl.dropIndex('index_name', noMatterOptions)
-          .catch(function (err) {
-            err.should.be.instanceOf(Error);
-            err.message.should.equal('problem');
-          });
-      });
-    });
+    shared.shouldBehaveLike('supporting Promise interface', setupContext);
   });
 
   describe('MigrationDSL.prototype.dropColumn', function() {
-    describe('optimistic case', function() {
-      beforeEach(function () {
-        sandbox.stub(dialect, 'dropCollectionColumn').yields(null, 123);
-      });
+    var setupContext = function (opts) {
+      opts.testedObject       = dsl;
+      opts.testedMethodName   = 'dropColumn';
+      opts.internalObject     = dialect;
+      opts.internalMethodName ='dropCollectionColumn';
+      opts.internalMethodArgs = ['collection_name', 'column_name'];
+    };
 
-      it('calls the passed callback', function (done) {
-        var cb = sandbox.mock();
-        cb.callsFake(done);
+    shared.shouldBehaveLike('supporting callback interface', setupContext);
 
-        cb.once().withArgs(null, 123);
-        dsl.dropColumn('collection_name', 'column_name', cb);
-      });
-
-      it('returns Promise unless callback is specified', function () {
-        dsl.dropColumn('collection_name', 'column_name')
-          .then(function (val) {
-            val.should.be.equal(123);
-          });
-      });
-    });
-
-    describe('error case', function() {
-      beforeEach(function() {
-        sandbox.stub(dialect, 'dropCollectionColumn').yields(new Error('problem'));
-      });
-
-      it('transfer error to the passed callback', function (done) {
-        var cb = sandbox.mock();
-        cb.callsFake(function () { done() });
-
-        cb.once().withArgs( sinon.match.instanceOf(Error).and(sinon.match.has('message', 'problem')) );
-
-        dsl.dropColumn('collection_name', 'column_name', cb);
-      });
-
-      it('returns rejected Promise unless callback is specified', function () {
-        return dsl.dropColumn('collection_name', 'column_name')
-          .catch(function (err) {
-            err.should.be.instanceOf(Error);
-            err.message.should.equal('problem');
-          });
-      });
-    });
+    shared.shouldBehaveLike('supporting Promise interface', setupContext);
   });
 
   describe('MigrationDSL.prototype.dropTable', function() {
-    describe('optimistic case', function() {
-      beforeEach(function () {
-        sandbox.stub(dialect, 'dropCollection').yields(null, 123);
-      });
+    var setupContext = function (opts) {
+      opts.testedObject       = dsl;
+      opts.testedMethodName   = 'dropTable';
+      opts.internalObject     = dialect;
+      opts.internalMethodName ='dropCollection';
+      opts.internalMethodArgs = ['collection_name'];
+    };
 
-      it('calls the passed callback', function (done) {
-        var cb = sandbox.mock();
-        cb.callsFake(done);
+    shared.shouldBehaveLike('supporting callback interface', setupContext);
 
-        cb.once().withArgs(null, 123);
-        dsl.dropTable('collection_name', cb);
-      });
-
-      it('returns Promise unless callback is specified', function () {
-        dsl.dropColumn('collection_name')
-          .then(function (val) {
-            val.should.be.equal(123);
-          });
-      });
-    });
-
-    describe('error case', function() {
-      beforeEach(function() {
-        sandbox.stub(dialect, 'dropCollection').yields(new Error('problem'));
-      });
-
-      it('transfer error to the passed callback', function (done) {
-        var cb = sandbox.mock();
-        cb.callsFake(function () { done() });
-
-        cb.once().withArgs( sinon.match.instanceOf(Error).and(sinon.match.has('message', 'problem')) );
-
-        dsl.dropTable('collection_name', cb);
-      });
-
-      it('returns rejected Promise unless callback is specified', function () {
-        return dsl.dropTable('collection_name')
-          .catch(function (err) {
-            err.should.be.instanceOf(Error);
-            err.message.should.equal('problem');
-          });
-      });
-    });
+    shared.shouldBehaveLike('supporting Promise interface', setupContext);
   });
 
   describe('MigrationDSL.prototype.addPrimaryKey', function() {
-    describe('optimistic case', function() {
-      beforeEach(function () {
-        sandbox.stub(dialect, 'addPrimaryKey').yields(null, 123);
-      });
+    var setupContext = function (opts) {
+      opts.testedObject       = dsl;
+      opts.testedMethodName   = 'addPrimaryKey';
+      opts.internalObject     = dialect;
+      opts.internalMethodName ='addPrimaryKey';
+      opts.internalMethodArgs = ['collection_name', 'column_name'];
+    };
 
-      it('calls the passed callback', function (done) {
-        var cb = sandbox.mock();
-        cb.callsFake(done);
+    shared.shouldBehaveLike('supporting callback interface', setupContext);
 
-        cb.once().withArgs(null, 123);
-        dsl.addPrimaryKey('collection_name', 'column_name', cb);
-      });
-
-      it('returns Promise unless callback is specified', function () {
-        return dsl.addPrimaryKey('collection_name', 'column_name')
-          .then(function (val) {
-            val.should.be.equal(123);
-          });
-      });
-    });
-
-    describe('error case', function() {
-      beforeEach(function() {
-        sandbox.stub(dialect, 'addPrimaryKey').yields(new Error('problem'));
-      });
-
-      it('transfer error to the passed callback', function (done) {
-        var cb = sandbox.mock();
-        cb.callsFake(function () { done() });
-
-        cb.once().withArgs( sinon.match.instanceOf(Error).and(sinon.match.has('message', 'problem')) );
-
-        dsl.addPrimaryKey('collection_name', 'column_name', cb);
-      });
-
-      it('returns rejected Promise unless callback is specified', function () {
-        return dsl.addPrimaryKey('collection_name', 'column_name')
-          .catch(function (err) {
-            err.should.be.instanceOf(Error);
-            err.message.should.equal('problem');
-          });
-      });
-    });
+    shared.shouldBehaveLike('supporting Promise interface', setupContext);
   });
 
   describe('MigrationDSL.prototype.addForeignKey', function() {
-    describe('optimistic case', function() {
-      beforeEach(function () {
-        sandbox.stub(dialect, 'addForeignKey').yields(null, 123);
-      });
+    var setupContext = function (opts) {
+      opts.testedObject       = dsl;
+      opts.testedMethodName   = 'addForeignKey';
+      opts.internalObject     = dialect;
+      opts.internalMethodName ='addForeignKey';
+      opts.internalMethodArgs = ['collection_name', {}];
+    };
 
-      it('calls the passed callback', function (done) {
-        var cb = sandbox.mock();
-        cb.callsFake(done);
+    shared.shouldBehaveLike('supporting callback interface', setupContext);
 
-        cb.once().withArgs(null, 123);
-
-        var noMatterOptions = {};
-
-        dsl.addForeignKey('collection_name', noMatterOptions, cb);
-      });
-
-      it('returns Promise unless callback is specified', function () {
-        var noMatterOptions = {};
-        return dsl.addForeignKey('collection_name', noMatterOptions)
-          .then(function (val) {
-            val.should.be.equal(123);
-          });
-      });
-    });
-
-    describe('error case', function() {
-      beforeEach(function() {
-        sandbox.stub(dialect, 'addForeignKey').yields(new Error('problem'));
-      });
-
-      it('transfer error to the passed callback', function (done) {
-        var cb = sandbox.mock();
-        cb.callsFake(function () { done() });
-
-        cb.once().withArgs( sinon.match.instanceOf(Error).and(sinon.match.has('message', 'problem')) );
-
-        var noMatterOptions = {};
-        dsl.addForeignKey('collection_name', noMatterOptions, cb);
-      });
-
-      it('returns rejected Promise unless callback is specified', function () {
-        var noMatterOptions = {};
-        return dsl.addForeignKey('collection_name', noMatterOptions)
-          .catch(function (err) {
-            err.should.be.instanceOf(Error);
-            err.message.should.equal('problem');
-          });
-      });
-    });
+    shared.shouldBehaveLike('supporting Promise interface', setupContext);
   });
 
   describe('MigrationDSL.prototype.dropPrimaryKey', function() {
-    describe('optimistic case', function() {
-      beforeEach(function () {
-        sandbox.stub(dialect, 'dropPrimaryKey').yields(null, 123);
-      });
+    var setupContext = function (opts) {
+      opts.testedObject       = dsl;
+      opts.testedMethodName   = 'dropPrimaryKey';
+      opts.internalObject     = dialect;
+      opts.internalMethodName ='dropPrimaryKey';
+      opts.internalMethodArgs = ['collection_name','column_name'];
+    };
 
-      it('calls the passed callback', function (done) {
-        var cb = sandbox.mock();
-        cb.callsFake(done);
+    shared.shouldBehaveLike('supporting callback interface', setupContext);
 
-        cb.once().withArgs(null, 123);
-
-        var noMatterOptions = {};
-        dsl.dropPrimaryKey('collection_name', noMatterOptions, cb);
-      });
-
-      it('returns Promise unless callback is specified', function () {
-        var noMatterOptions = {};
-        return dsl.dropPrimaryKey('collection_name', noMatterOptions)
-          .then(function (val) {
-            val.should.be.equal(123);
-          });
-      });
-    });
-
-    describe('error case', function() {
-      beforeEach(function() {
-        sandbox.stub(dialect, 'dropPrimaryKey').yields(new Error('problem'));
-      });
-
-      it('transfer error to the passed callback', function (done) {
-        var cb = sandbox.mock();
-        cb.callsFake(function () { done() });
-
-        cb.once().withArgs( sinon.match.instanceOf(Error).and(sinon.match.has('message', 'problem')) );
-
-        var noMatterOptions = {};
-        dsl.dropPrimaryKey('collection_name', noMatterOptions, cb);
-      });
-
-      it('returns rejected Promise unless callback is specified', function () {
-        var noMatterOptions = {};
-        return dsl.dropPrimaryKey('collection_name', noMatterOptions)
-          .catch(function (err) {
-            err.should.be.instanceOf(Error);
-            err.message.should.equal('problem');
-          });
-      });
-    });
+    shared.shouldBehaveLike('supporting Promise interface', setupContext);
   });
 
   describe('MigrationDSL.prototype.dropForeignKey', function() {
-    describe('optimistic case', function() {
-      beforeEach(function () {
-        sandbox.stub(dialect, 'dropForeignKey').yields(null, 123);
-      });
+    var setupContext = function (opts) {
+      opts.testedObject       = dsl;
+      opts.testedMethodName   = 'dropForeignKey';
+      opts.internalObject     = dialect;
+      opts.internalMethodName ='dropForeignKey';
+      opts.internalMethodArgs = ['collection_name','column_name'];
+    };
 
-      it('calls the passed callback', function (done) {
-        var cb = sandbox.mock();
-        cb.callsFake(done);
+    shared.shouldBehaveLike('supporting callback interface', setupContext);
 
-        cb.once().withArgs(null, 123);
-
-        var noMatterOptions = {};
-        dsl.dropForeignKey('collection_name', noMatterOptions, cb);
-      });
-
-      it('returns Promise unless callback is specified', function () {
-        var noMatterOptions = {};
-        return dsl.dropForeignKey('collection_name', noMatterOptions)
-          .then(function (val) {
-            val.should.be.equal(123);
-          });
-      });
-    });
-
-    describe('error case', function() {
-      beforeEach(function() {
-        sandbox.stub(dialect, 'dropForeignKey').yields(new Error('problem'));
-      });
-
-      it('transfer error to the passed callback', function (done) {
-        var cb = sandbox.mock();
-        cb.callsFake(function () { done() });
-
-        cb.once().withArgs( sinon.match.instanceOf(Error).and(sinon.match.has('message', 'problem')) );
-
-        var noMatterOptions = {};
-        dsl.dropForeignKey('collection_name', noMatterOptions, cb);
-      });
-
-      it('returns rejected Promise unless callback is specified', function () {
-        var noMatterOptions = {};
-        return dsl.dropForeignKey('collection_name', noMatterOptions)
-          .catch(function (err) {
-            err.should.be.instanceOf(Error);
-            err.message.should.equal('problem');
-          });
-      });
-    });
+    shared.shouldBehaveLike('supporting Promise interface', setupContext);
   });
 
   describe('MigrationDSL.prototype.hasTable', function() {
-    describe('optimistic case', function() {
-      beforeEach(function () {
-        sandbox.stub(dialect, 'hasCollection').yields(null, 123);
-      });
+    var setupContext = function (opts) {
+      opts.testedObject       = dsl;
+      opts.testedMethodName   = 'hasTable';
+      opts.internalObject     = dialect;
+      opts.internalMethodName ='hasCollection';
+      opts.internalMethodArgs = ['collection_name'];
+    };
 
-      it('calls the passed callback', function (done) {
-        var cb = sandbox.mock();
-        cb.callsFake(done);
+    shared.shouldBehaveLike('supporting callback interface', setupContext);
 
-        cb.once().withArgs(null, 123);
-
-        dsl.hasTable('collection_name', cb);
-      });
-
-      it('returns Promise unless callback is specified', function () {
-        return dsl.hasTable('collection_name')
-          .then(function (val) {
-            val.should.be.equal(123);
-          });
-      });
-    });
-
-    describe('error case', function() {
-      beforeEach(function() {
-        sandbox.stub(dialect, 'hasCollection').yields(new Error('problem'));
-      });
-
-      it('transfer error to the passed callback', function (done) {
-        var cb = sandbox.mock();
-        cb.callsFake(function () { done() });
-
-        cb.once().withArgs( sinon.match.instanceOf(Error).and(sinon.match.has('message', 'problem')) );
-
-        dsl.hasTable('collection_name', cb);
-      });
-
-      it('returns rejected Promise unless callback is specified', function () {
-        return dsl.hasTable('collection_name')
-          .catch(function (err) {
-            err.should.be.instanceOf(Error);
-            err.message.should.equal('problem');
-          });
-      });
-    });
+    shared.shouldBehaveLike('supporting Promise interface', setupContext);
   });
 
   describe('MigrationDSL.prototype.getColumns', function() {
-    describe('optimistic case', function() {
-      beforeEach(function () {
-        sandbox.stub(dialect, 'getCollectionProperties').yields(null, 123);
-      });
+    var setupContext = function (opts) {
+      opts.testedObject       = dsl;
+      opts.testedMethodName   = 'getColumns';
+      opts.internalObject     = dialect;
+      opts.internalMethodName ='getCollectionProperties';
+      opts.internalMethodArgs = ['collection_name'];
+    };
 
-      it('calls the passed callback', function (done) {
-        var cb = sandbox.mock();
-        cb.callsFake(done);
+    shared.shouldBehaveLike('supporting callback interface', setupContext);
 
-        cb.once().withArgs(null, 123);
-
-        dsl.getColumns('collection_name', cb);
-      });
-
-      it('returns Promise unless callback is specified', function () {
-        return dsl.getColumns('collection_name')
-          .then(function (val) {
-            val.should.be.equal(123);
-          });
-      });
-    });
-
-    describe('error case', function() {
-      beforeEach(function() {
-        sandbox.stub(dialect, 'getCollectionProperties').yields(new Error('problem'));
-      });
-
-      it('transfer error to the passed callback', function (done) {
-        var cb = sandbox.mock();
-        cb.callsFake(function () { done() });
-
-        cb.once().withArgs( sinon.match.instanceOf(Error).and(sinon.match.has('message', 'problem')) );
-
-        dsl.getColumns('collection_name', cb);
-      });
-
-      it('returns rejected Promise unless callback is specified', function () {
-        return dsl.getColumns('collection_name')
-          .catch(function (err) {
-            err.should.be.instanceOf(Error);
-            err.message.should.equal('problem');
-          });
-      });
-    });
+    shared.shouldBehaveLike('supporting Promise interface', setupContext);
   });
 
   describe('MigrationDSL.prototype.execQuery', function() {
-    describe('optimistic case', function() {
-      beforeEach(function () {
-        sandbox.stub(driver, 'execQuery').yields(null, 123);
-      });
+    var setupContext = function (opts) {
+      opts.testedObject       = dsl;
+      opts.testedMethodName   = 'execQuery';
+      opts.internalObject     = driver;
+      opts.internalMethodName ='execQuery';
+      opts.internalMethodArgs = ['collection_name', {}];
+    };
 
-      it('calls the passed callback', function (done) {
-        var cb = sandbox.mock();
-        cb.callsFake(done);
+    shared.shouldBehaveLike('supporting callback interface', setupContext);
 
-        cb.once().withArgs(null, 123);
-
-        var noMatterOptions = {};
-        dsl.execQuery('collection_name', noMatterOptions, cb);
-      });
-
-      it('returns Promise unless callback is specified', function () {
-        var noMatterOptions = {};
-        return dsl.execQuery('collection_name', noMatterOptions)
-          .then(function (val) {
-            val.should.be.equal(123);
-          });
-      });
-    });
-
-    describe('error case', function() {
-      beforeEach(function() {
-        sandbox.stub(driver, 'execQuery').yields(new Error('problem'));
-      });
-
-      it('transfer error to the passed callback', function (done) {
-        var cb = sandbox.mock();
-        cb.callsFake(function () { done() });
-
-        cb.once().withArgs( sinon.match.instanceOf(Error).and(sinon.match.has('message', 'problem')) );
-
-        var noMatterOptions = {};
-        dsl.execQuery('collection_name', noMatterOptions, cb);
-      });
-
-      it('returns rejected Promise unless callback is specified', function () {
-        var noMatterOptions = {};
-        return dsl.execQuery('collection_name', noMatterOptions)
-          .catch(function (err) {
-                err.should.be.instanceOf(Error);
-                err.message.should.equal('problem');
-              });
-          });
-    });
+    shared.shouldBehaveLike('supporting Promise interface', setupContext);
   });
 });
