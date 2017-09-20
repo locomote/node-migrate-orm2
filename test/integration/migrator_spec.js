@@ -1,5 +1,6 @@
 var should     = require('should');
 var sinon      = require('sinon');
+var sandbox    = sinon.sandbox.create();
 var async      = require('async');
 var _          = require('lodash');
 var fs         = require('fs');
@@ -156,12 +157,32 @@ describe('Migrator', function() {
       });
 
       describe('Migrator.prototype.up Promise support', function () {
-        it('runs two migrations successfully', function () {
-          return task.up().then(function () {
-            return Promise.all([
-              hasColumnAsync('table1', 'wobble'),
-              hasColumnAsync('table1', 'wibble')
-            ]);
+        describe('optimistic case', function () {
+          it('runs two migrations successfully', function () {
+            return task.up().then(function () {
+              return Promise.all([
+                hasColumnAsync('table1', 'wobble'),
+                hasColumnAsync('table1', 'wibble')
+              ]);
+            });
+          });
+        });
+
+        describe('error case', function() {
+          beforeEach(function() {
+            sandbox.stub(task, 'performMigration').yields(new Error('problem'));
+          });
+
+          afterEach(function() {
+            sandbox.restore();
+          });
+
+          it('returns rejected Promise', function () {
+            return task.up()
+              .catch(function (err) {
+                err.should.be.instanceOf(Error);
+                err.message.should.equal('problem');
+              });
           });
         });
       });
@@ -188,20 +209,49 @@ describe('Migrator', function() {
       });
 
       describe('Migrator.prototype.down Promise support', function () {
-        it('runs two migrations successfully', function () {
-          return task.up()
-            .then(function () {
-              return hasMigrationsAsync(2);
-            })
-            .then(function () {
-              return task.down('001-create-table1.js');
-            })
-            .then(function () {
-              return Promise.all([
-                hasMigrationsAsync(0),
-                hasNoTableAsync('table1')
-              ]);
-            });
+        describe('optimistic case', function() {
+
+          it('runs two migrations successfully', function () {
+            return task.up()
+              .then(function () {
+                return hasMigrationsAsync(2);
+              })
+              .then(function () {
+                return task.down('001-create-table1.js');
+              })
+              .then(function () {
+                return Promise.all([
+                  hasMigrationsAsync(0),
+                  hasNoTableAsync('table1')
+                ]);
+              });
+          });
+        });
+
+        describe('error case', function() {
+          beforeEach(function() {
+            sandbox.stub(task, 'performMigration')
+              .callThrough()
+              .withArgs('down').yields(new Error('problem'));
+          });
+
+          afterEach(function() {
+            sandbox.restore();
+          });
+
+          it('returns rejected Promise', function () {
+            return task.up()
+              .then(function () {
+                return hasMigrationsAsync(2);
+              })
+              .then(function () {
+                return task.down('001-create-table1.js');
+              })
+              .catch(function (err) {
+                err.should.be.instanceOf(Error);
+                err.message.should.equal('problem');
+              });
+          });
         });
       });
     });
@@ -245,7 +295,7 @@ describe('Migrator', function() {
       it('generates a migration', function (done) {
         task.generate('test1', function (err, filename) {
           var filePath = path.join(cwd, task.dir, filename + '.js');
-          fs.statSync(filePath).isFile().should.be.true;
+          fs.statSync(filePath).isFile().should.be.true();
           done();
         });
       });
@@ -254,19 +304,24 @@ describe('Migrator', function() {
         task = new Migrator(conn, {coffee: true});
         task.generate('test1', function (err, filename) {
           var filePath = path.join(cwd, task.dir, filename + '.coffee');
-          fs.statSync(filePath).isFile().should.be.true;
+          fs.statSync(filePath).isFile().should.be.true();
           done();
         });
       });
 
       describe('Migrator.prototype.generate Promise support', function () {
-        it('generates a migration', function () {
-          return task.generate('test1')
-            .then(function (filename) {
-              var filePath = path.join(cwd, task.dir, filename + '.js');
-              fs.statSync(filePath).isFile().should.be.true;
-            })
+        describe('optimistic case', function() {
+          it('generates a migration', function () {
+            return task.generate('test1')
+              .then(function (filename) {
+                var filePath = path.join(cwd, task.dir, filename + '.js');
+                fs.statSync(filePath).isFile().should.be.true();
+              })
+          });
         });
+
+        // this method (Migrator.prototype.generate) never returns rejected promise
+        // due to implementation of the original method
       });
     });
 
@@ -281,7 +336,7 @@ describe('Migrator', function() {
 
       it('creates the migration folder', function (done) {
         var dirPath = path.join(cwd, task.dir);
-        fs.statSync(dirPath).isDirectory().should.be.true;
+        fs.statSync(dirPath).isDirectory().should.be.true();
         done();
       });
 
@@ -291,7 +346,7 @@ describe('Migrator', function() {
 
       it('gets called when calling #up', function (done) {
         task.up(function () {
-          task.setup.called.should.be.true;
+          task.setup.called.should.be.true();
           done();
         });
       });
