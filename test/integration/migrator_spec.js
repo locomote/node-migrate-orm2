@@ -69,45 +69,121 @@ describe('Migrator', function() {
   });
 
   describe('Support of migrations written with Promises', function() {
-    var tablePromisedMigration = "exports.up = function () {       \n\
-      return this.createTable('table-promised', {                          \n\
-        id     : { type : \"integer\", key: true },                \n\
-        name   : { type : \"text\", required: true }               \n\
-      });                                                          \n\
-    };                                                             \n\
-                                                                   \n\
-    exports.down = function () {                                   \n\
-      return this.dropTable('table-promised');                             \n\
-    };";
+    describe('optimistic case', function () {
+      var tablePromisedMigration = "exports.up = function () {         \n\
+          return this.createTable('table_promised', {                  \n\
+            id     : { type : \"integer\", key: true },                \n\
+            name   : { type : \"text\", required: true }               \n\
+          });                                                          \n\
+        };                                                             \n\
+                                                                       \n\
+        exports.down = function () {                                   \n\
+          return this.dropTable('table_promised');                     \n\
+        };";
 
-    //ensure the migration folder is cleared before each test
-    beforeEach(function (done) {
-      task = new Migrator(conn, {dir: 'migrations'});
-      helpers.cleanupDbAndDir(conn, task.dir, ['table_promised'], function () {
-        task.setup(function (err) {
-          should.not.exist(err);
-          helpers.writeMigration(task, '001-create-table-promised.js', tablePromisedMigration);
-          done();
+
+      //ensure the migration folder is cleared before each test
+      beforeEach(function (done) {
+        task = new Migrator(conn, {dir: 'migrations'});
+        helpers.cleanupDbAndDir(conn, task.dir, ['table_promised'], function () {
+          task.setup(function (err) {
+            should.not.exist(err);
+            helpers.writeMigration(task, '001-create-table-promised.js', tablePromisedMigration);
+            done();
+          });
         });
+      });
+
+      it('runs down migrations using name (including)', function () {
+        return task.up()
+          .then(function () {
+            return hasMigrationsAsync(1);
+          })
+          .then(function () {
+            return task.down('001-create-table1-promised.js');
+          })
+          .then(function () {
+            return Promise.all([
+              hasMigrationsAsync(0),
+              hasNoTableAsync('table_promised')
+            ]);
+          });
       });
     });
 
-    it('runs down migrations using name (including)', function () {
-      return task.up()
-        .then(function () {
-          return hasMigrationsAsync(1);
-        })
-        .then(function () {
-          return task.down('001-create-table1-promised.js');
-        })
-        .then(function () {
-          return Promise.all([
-            hasMigrationsAsync(0),
-            hasNoTableAsync('table-promised')
-          ]);
-        });
-    });
+    describe('error case', function () {
 
+      describe('when migration.up returns rejected promise', function () {
+
+        var badUpMigration = "exports.up = function () {               \n\
+          return Promise.reject(new Error('problem_up'));              \n\
+        };                                                             \n\
+                                                                       \n\
+        exports.down = function () {                                   \n\
+          return this.dropTable('table_promised');                     \n\
+        };";
+
+
+        //ensure the migration folder is cleared before each test
+        beforeEach(function (done) {
+          task = new Migrator(conn, {dir: 'migrations'});
+          helpers.cleanupDbAndDir(conn, task.dir, ['table_promised'], function () {
+            task.setup(function (err) {
+              should.not.exist(err);
+              helpers.writeMigration(task, '001-create-table-promised.js', badUpMigration);
+              done();
+            });
+          });
+        });
+
+        it('runs down migrations using name (including)', function () {
+          return task.up()
+            .catch(function (err) {
+              err.should.be.instanceOf(Error);
+              err.message.should.equal('problem_up');
+            });
+        });
+      });
+
+      describe('when migration.down returns rejected promise', function () {
+
+        var badDownMigration = "exports.up = function () {             \n\
+          return this.createTable('table_promised', {                  \n\
+            id     : { type : \"integer\", key: true },                \n\
+            name   : { type : \"text\", required: true }               \n\
+          });                                                          \n\
+        };                                                             \n\
+                                                                       \n\
+        exports.down = function () {                                   \n\
+          return Promise.reject(new Error('problem_down'));            \n\
+        };";
+
+
+        //ensure the migration folder is cleared before each test
+        beforeEach(function (done) {
+          task = new Migrator(conn, {dir: 'migrations'});
+          helpers.cleanupDbAndDir(conn, task.dir, ['table_promised'], function () {
+            task.setup(function (err) {
+              should.not.exist(err);
+              helpers.writeMigration(task, '001-create-table-promised.js', badDownMigration);
+              done();
+            });
+          });
+        });
+
+        it('runs down migrations using name (including)', function () {
+          return task.up()
+            .then(function () {
+              return task.down();
+            })
+            .catch(function (err) {
+              err.should.be.instanceOf(Error);
+              err.message.should.equal('problem_down');
+            });
+        });
+      })
+
+    });
   });
 
   describe('Support of migrations written with callbacks', function() {
@@ -119,7 +195,6 @@ describe('Migrator', function() {
         task.setup(function (err) {
           should.not.exist(err);
           helpers.writeMigration(task, '001-create-table1.js', table1Migration);
-          // helpers.writeMigration(task, '001-create-table-promised.js', table1Migration);
           helpers.writeMigration(task, '002-add-two-columns.js', column2Migration);
           done();
         });
