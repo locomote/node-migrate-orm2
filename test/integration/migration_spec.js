@@ -174,7 +174,7 @@ describe('Migration', function () {
       it('creates orm_migrations', function(done){
         dsl.hasTable('orm_migrations', function(err, hasTable) {
           should.not.exist(err);
-          hasTable.should.be.true;
+          hasTable.should.be.true();
           done();
         });
       });
