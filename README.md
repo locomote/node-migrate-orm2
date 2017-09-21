@@ -2,7 +2,7 @@
 
 Migrations using [ORM2's](https://github.com/dresende/node-orm2) model DSL leveraging Visionmedia's node-migrate.
 
-Heads up ! v2 introduce some major changes, make sure you check the [changelog](Changelog.md)
+Heads up ! v3 introduce some major changes, make sure you check the [changelog](Changelog.md)
 
 ## Installation
 
@@ -55,6 +55,24 @@ exports.down = function (next){
   this.dropTable('test_table', next);
 };
 ```
+
+You can also write Promise-based migrations, same example, but with no callbacks specified:
+
+
+```js
+exports.up = function () {
+  return this.createTable('test_table', {
+    id     : { type : "serial", key: true }, // auto increment
+    name   : { type : "text", required: true }
+  });
+};
+
+exports.down = function (){
+  return this.dropTable('test_table');
+};
+```
+Both `createTable` and `dropTable`, along with other operations return promises if callback is
+not specified. Look [here](examples/migrations) for more examples.
 
 Another example for adding or dropping a column:
 
@@ -196,6 +214,18 @@ See https://github.com/nicholasf/node-orm-migrate for a command line tool.
     -d, --down      Run down migrations
 ```
 
+## Usage - Promises
+
+Task methods (`up`, `down`, `generate`) now support Promises allong with callback.
+In case if you don't pass callback to those methods, they will return a Promise.
+
+In this example `task.down()` will return a Promise:
+```
+> task.down();
+>   down : migrations/001-create-users.js
+  migration : complete
+```
+Same approach works for `task.up` and `task.generate`.
 
 ## Usage - grunt
 
@@ -220,7 +250,6 @@ exports.runMigration = function (operation, grunt, done) {
   });
 };
 ```
-
 Registering the Grunt tasks looks like this:
 
 ```js
