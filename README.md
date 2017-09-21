@@ -71,7 +71,7 @@ exports.down = function (){
   return this.dropTable('test_table');
 };
 ```
-Both `createTable` and `dropTable`, along with other operations return promises if callback is
+Both `createTable` and `dropTable`, along with other [MigrationDSL methods](lib/migration-dsl.js) return promises if callback is
 not specified. Look [here](examples/migrations) for more examples.
 
 Another example for adding or dropping a column:
