@@ -1,3 +1,7 @@
+### v3.0.0
+- Add Promises support to migration methods
+- Add Promiess support to `Task` methods(`generate`, `up`, `down`).
+
 ### v2.0.1
 - Correctly load `sql-ddl-sync` dialect - fixes for npm 5
 
