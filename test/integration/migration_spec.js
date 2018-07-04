@@ -147,18 +147,37 @@ describe('Migration', function () {
   });
 
   describe('#delete', function() {
-    before(function(done) {
-      reload(function() {
-        migration.delete('002-create-cats.js', done);
+    describe('when file with extension', function() {
+      before(function(done) {
+        reload(function() {
+          migration.delete('002-create-cats.js', done);
+        });
+      });
+
+      it('removed the migration', function(done) {
+        migration.all(function(err, migrations) {
+          should.not.exist(err);
+          migrations.should.have.length(1);
+          _.first(migrations).should.eql('001-create-pets.js');
+          done();
+        });
       });
     });
 
-    it('removed the migration', function(done) {
-      migration.all(function(err, migrations) {
-        should.not.exist(err);
-        migrations.should.have.length(1);
-        _.first(migrations).should.eql('001-create-pets.js');
-        done();
+    describe('when file without extension', function() {
+      before(function(done) {
+        reload(function() {
+          migration.delete('002-create-cats', done);
+        });
+      });
+
+      it('removed the migration', function(done) {
+        migration.all(function(err, migrations) {
+          should.not.exist(err);
+          migrations.should.have.length(1);
+          _.first(migrations).should.eql('001-create-pets.js');
+          done();
+        });
       });
     });
   });
