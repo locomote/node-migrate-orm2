@@ -1,3 +1,19 @@
+### v4.0.0
+- Support all existing migrations when switching from coffee to js and vice versa
+  ( using migration file name without extension for checking if migration
+  is applied and on deleting migration record from orm_migrations table )
+
+  **Example**: project with already executed migration `001-migration.coffee`
+  ```
+  > SELECT * from orm_migrations;
+  | migration                                              |
+  |--------------------------------------------------------|
+  | 001-migration.coffe                                |
+  ```
+  After conversion `001-migration.coffee` to `001-migration.js`
+  **node-migrate-orm2** will identify converted file as executed and will not
+  re-run this migration again.
+
 ### v3.0.0
 - Add Promises support to migration methods
 - Add Promiess support to `Task` methods(`generate`, `up`, `down`).
