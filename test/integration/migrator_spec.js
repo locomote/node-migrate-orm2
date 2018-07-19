@@ -1,6 +1,5 @@
 var should     = require('should');
 var sinon      = require('sinon');
-var sandbox    = sinon.sandbox.create();
 var async      = require('async');
 var _          = require('lodash');
 var fs         = require('fs');
@@ -245,11 +244,11 @@ describe('Migrator', function() {
 
         describe('error case', function() {
           beforeEach(function() {
-            sandbox.stub(task, 'performMigration').yields(new Error('problem'));
+            sinon.stub(task, 'performMigration').yields(new Error('problem'));
           });
 
           afterEach(function() {
-            sandbox.restore();
+            sinon.restore();
           });
 
           it('returns rejected Promise', function () {
@@ -305,13 +304,13 @@ describe('Migrator', function() {
 
         describe('error case', function() {
           beforeEach(function() {
-            sandbox.stub(task, 'performMigration')
+            sinon.stub(task, 'performMigration')
               .callThrough()
               .withArgs('down').yields(new Error('problem'));
           });
 
           afterEach(function() {
-            sandbox.restore();
+            sinon.restore();
           });
 
           it('returns rejected Promise', function () {
