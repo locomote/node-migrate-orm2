@@ -1,5 +1,7 @@
-### v4.0.2
+### v4.0.3
 - Update packages to clear security warnings ([#34](../../pull/34))
+
+### v4.0.2 (nothing)
 
 ### v4.0.1
 - Make below changes work with mysql ([#33](../../pull/33))
