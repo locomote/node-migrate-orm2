@@ -1,3 +1,6 @@
+### v4.0.1
+- Make below changes work with mysql ([#33](../../pull/33))
+
 ### v4.0.0
 - Support all existing migrations when switching from coffee to js and vice versa
   ( using migration file name without extension for checking if migration
