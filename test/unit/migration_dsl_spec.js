@@ -2,7 +2,6 @@
 var _             = require('lodash');
 var should        = require('should');
 var sinon         = require('sinon');
-var sandbox       = sinon.sandbox.create();
 var shared        = require('shared-examples-for');
 
 var MigrationDSL  = require('../../lib/migration-dsl');
@@ -46,8 +45,6 @@ var fake = {
 };
 
 shared.examplesFor('supporting callback interface', function(opts) {
-  var sandbox = sinon.sandbox.create();
-
   describe('Callback interface', function() {
     beforeEach('Setup context', function () {
       if (!opts.run) {
@@ -62,16 +59,16 @@ shared.examplesFor('supporting callback interface', function(opts) {
     });
 
     afterEach(function () {
-      sandbox.verifyAndRestore();
+      sinon.verifyAndRestore();
     });
 
     describe('optimistic case', function () {
       beforeEach('stub internal call', function () {
-        sandbox.stub(opts.internalObject, opts.internalMethodName).yields(null, 123);
+        sinon.stub(opts.internalObject, opts.internalMethodName).yields(null, 123);
       });
 
       it('calls the passed callback', function (done) {
-        var cb = sandbox.mock();
+        var cb = sinon.mock();
         cb.callsFake(done);
 
         cb.once().withArgs(null, 123);
@@ -82,11 +79,11 @@ shared.examplesFor('supporting callback interface', function(opts) {
 
     describe('error case', function () {
       beforeEach(function () {
-        sandbox.stub(opts.internalObject, opts.internalMethodName).yields(new Error('problem'));
+        sinon.stub(opts.internalObject, opts.internalMethodName).yields(new Error('problem'));
       });
 
       it('transfer error to the passed callback', function (done) {
-        var cb = sandbox.mock();
+        var cb = sinon.mock();
         cb.callsFake(function () {
           done()
         });
@@ -100,8 +97,6 @@ shared.examplesFor('supporting callback interface', function(opts) {
 });
 
 shared.examplesFor('supporting Promise interface', function(opts) {
-  var sandbox = sinon.sandbox.create();
-
   describe('Promise interface', function () {
     beforeEach('Setup context', function () {
       if (!opts.run) {
@@ -116,12 +111,12 @@ shared.examplesFor('supporting Promise interface', function(opts) {
     });
 
     afterEach(function () {
-      sandbox.verifyAndRestore();
+      sinon.verifyAndRestore();
     });
 
     describe('optimistic case', function () {
       beforeEach(function () {
-        sandbox.stub(opts.internalObject, opts.internalMethodName).yields(null, 123);
+        sinon.stub(opts.internalObject, opts.internalMethodName).yields(null, 123);
       });
 
       it('returns Promise unless callback is specified', function () {
@@ -134,7 +129,7 @@ shared.examplesFor('supporting Promise interface', function(opts) {
 
     describe('error case', function () {
       beforeEach(function () {
-        sandbox.stub(opts.internalObject, opts.internalMethodName).yields(new Error('problem'));
+        sinon.stub(opts.internalObject, opts.internalMethodName).yields(new Error('problem'));
       });
 
       it('returns rejected Promise unless callback is specified', function () {
@@ -159,12 +154,12 @@ describe('MigrationDSL', function() {
   });
 
   beforeEach(function () {
-    sandbox.stub(require("sql-ddl-sync"), 'dialect').callsFake(function () { return dialect; });
+    sinon.stub(require("sql-ddl-sync"), 'dialect').callsFake(function () { return dialect; });
     dsl = fake.dsl(driver);
   });
 
   afterEach(function () {
-    sandbox.verifyAndRestore();
+    sinon.verifyAndRestore();
   });
 
   describe('MigrationDSL.prototype.createTable', function() {
@@ -197,7 +192,7 @@ describe('MigrationDSL', function() {
     };
 
     beforeEach(function () {
-      sandbox.stub(dsl, '_createColumn').callsFake(function ()  { return fake.object() });
+      sinon.stub(dsl, '_createColumn').callsFake(function ()  { return fake.object() });
     });
 
     shared.shouldBehaveLike('supporting callback interface',
