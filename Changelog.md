@@ -1,3 +1,6 @@
+### v4.0.5
+- Update packages to fix security vulnerabilities
+
 ### v4.0.4
 - Remove `git` reference to `sql-ddl-sync` - use npm version instead ([#35](../../pull/35))
 
