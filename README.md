@@ -125,7 +125,9 @@ The full list of operations available through ```this```:
 * addPrimaryKey
 * dropPrimaryKey
 * addForeignKey
+* addForeignKeyConstraint
 * dropForeignKey
+* dropForeignKeyConstraint
 * execQuery
 
 These operations are depicted in the examples folder.

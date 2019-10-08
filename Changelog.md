@@ -1,3 +1,6 @@
+### v4.0.6
+- Allow to add foreign keys with custon constraint name and on delete action
+
 ### v4.0.5
 - Update packages to fix security vulnerabilities
 
