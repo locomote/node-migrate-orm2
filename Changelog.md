@@ -1,4 +1,4 @@
-### v4.0.6
+### v4.1.0
 - Allow to add foreign keys with custon constraint name and on delete action
 
 ### v4.0.5
