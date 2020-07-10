@@ -19,11 +19,11 @@
     "async": "2.6.1",
     "bluebird": "^3.5.1",
     "lodash": "^4.17.13",
-    "mkdirp": "0.5.1",
+    "mkdirp": "0.5.5",
     "sql-ddl-sync": "0.3.14"
   },
   "devDependencies": {
-    "mocha": "5.2.0",
+    "mocha": "6.2.3",
     "mysql": "2.15.0",
     "orm": "5.0.2",
     "pg": "7.4.3",
