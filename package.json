@@ -1,6 +1,6 @@
 {
   "name": "migrate-orm2",
-  "version": "4.1.1",
+  "version": "4.1.2",
   "description": "A library providing migrations using ORM2's model DSL leveraging Visionmedia's node-migrate.",
   "main": "index.js",
   "repository": {
@@ -16,16 +16,16 @@
     "test": "node test/run"
   },
   "dependencies": {
-    "async": "2.6.1",
+    "async": "~2.6.3",
     "bluebird": "^3.5.1",
-    "lodash": "^4.17.13",
-    "mkdirp": "0.5.5",
-    "sql-ddl-sync": "0.3.14"
+    "lodash": "^4.17.20",
+    "mkdirp": "~0.5.5",
+    "sql-ddl-sync": "~0.3.16"
   },
   "devDependencies": {
     "mocha": "6.2.3",
     "mysql": "2.15.0",
-    "orm": "5.0.2",
+    "orm": "5.0.5",
     "pg": "7.4.3",
     "rimraf": "2.6.1",
     "shared-examples-for": "0.1.3",
