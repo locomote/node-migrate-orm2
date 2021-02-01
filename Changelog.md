@@ -1,3 +1,9 @@
+### v4.1.2
+- Fix security vulnerabilities
+
+### v4.1.1
+- Fix security vulnerabilities
+
 ### v4.1.0
 - Allow to add foreign keys with custon constraint name and on delete action
 
