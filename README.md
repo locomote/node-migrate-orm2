@@ -1,5 +1,8 @@
 # migrate-orm2
 
+[![Known Vulnerabilities](https://snyk.io/test/github/locomote/node-migrate-orm2/badge.svg](https://snyk.io/test/github/locomote/node-migrate-orm2)
+[![](https://badge.fury.io/js/migrate-orm2.svg)](https://npmjs.org/package/migrate-orm2)
+
 Migrations using [ORM2's](https://github.com/dresende/node-orm2) model DSL leveraging Visionmedia's node-migrate.
 
 Heads up ! v3 introduce some major changes, make sure you check the [changelog](Changelog.md)
