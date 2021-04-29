@@ -1,3 +1,7 @@
+### v4.1.3
+- Fix security vulnerability (y18n)
+- Use Github Actions for CI
+
 ### v4.1.2
 - Fix security vulnerabilities
 
