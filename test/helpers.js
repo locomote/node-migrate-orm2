@@ -12,33 +12,33 @@ var aliases = {
   postgres: 'postgresql'
 };
 
-var travisConfig = {
+var ciConfig = {
   mysql: {
     protocol : 'mysql',
-    user     : 'root',
-    password : '',
+    user     : 'mysql',
+    password : 'mysql',
     query    : { pool: true },
-    database : 'migrate_orm2_test',
-    host     : '127.0.0.1'
+    database : 'mysql',
+    host     : 'localhost'
   },
   postgresql : {
     protocol : 'postgresql',
     user     : 'postgres',
-    password : '',
+    password : 'postgres',
     query    : { pool: true },
-    database : 'migrate_orm2_test',
-    host     : '127.0.0.1'
+    database : 'postgres',
+    host     : 'localhost'
   }
 };
 
 module.exports = {
-  isTravis: function () {
+  isCI: function () {
     return Boolean(process.env.CI);
   },
 
   config: function () {
-    if (this.isTravis()) {
-      return travisConfig;
+    if (this.isCI()) {
+      return ciConfig;
     } else {
       return require('./config');
     }
