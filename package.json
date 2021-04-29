@@ -13,8 +13,7 @@
   },
   "homepage": "https://github.com/locomote/node-migrate-orm2",
   "scripts": {
-    "test": "mocha test",
-    "test-all": "ORM_PROTOCOL=postgres mocha test && ORM_PROTOCOL=mysql mocha test"
+    "test": "ORM_PROTOCOL=postgres mocha test && ORM_PROTOCOL=mysql mocha test"
   },
   "dependencies": {
     "async": "~2.6.3",
