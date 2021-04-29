@@ -1,7 +1,7 @@
 ### v4.1.3
 - Fix security vulnerability (y18n)
 - Use Github Actions for CI
-- Tests required v8 pg driver to pass when using node > 12. Your code may need this too..
+- If using NodeJS v14+ & Postgres, you must use `pg` >= 8.1.
 
 ### v4.1.2
 - Fix security vulnerabilities
