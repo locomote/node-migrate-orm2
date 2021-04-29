@@ -24,10 +24,9 @@ jobs:
           MYSQL_USER: mysql
           MYSQL_PASSWORD: mysql
           MYSQL_ROOT_PASSWORD: mysql
-        ports:
-          - 33306:3306
         options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
-
+        ports:
+          - 3306:3306
 
       postgres:
         # Docker Hub image
@@ -36,11 +35,7 @@ jobs:
         env:
           POSTGRES_PASSWORD: postgres
         # Set health checks to wait until postgres has started
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+        options: --health-cmd=pg_isready --health-interval=10s --health-timeout=5s --health-retries=5
         ports:
           - 5432:5432
 
