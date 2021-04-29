@@ -23,7 +23,7 @@
     "sql-ddl-sync": "~0.3.16"
   },
   "devDependencies": {
-    "mocha": "6.2.3",
+    "mocha": "8.3.2",
     "mysql": "2.15.0",
     "orm": "5.0.5",
     "pg": "7.4.3",
