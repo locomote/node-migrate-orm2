@@ -1,3 +1,4 @@
+var _       = require('lodash');
 var should  = require('should');
 var helpers = require('../helpers');
 var Task    = require('./../../');
@@ -57,7 +58,7 @@ describe('add/drop column dsl', function (done) {
           function (err, result) {
             should.not.exist(err);
 
-            should.equal(result[0].column_name, 'full_name')
+            should.equal(_.values(result[0])[0], 'full_name')
             done();
           }
         );
