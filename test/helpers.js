@@ -4,7 +4,6 @@ var util   = require('util');
 var path   = require('path');
 var orm    = require('orm');
 var rimraf = require('rimraf');
-var common = module.exports;
 var async  = require('async');
 
 
