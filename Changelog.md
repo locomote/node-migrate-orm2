@@ -1,4 +1,12 @@
+### v4.1.5
+- Update packages to resolve security vulnerabilities
+
+### v4.1.4
+- Allow specifying custom file extensions ([#1](../../pull/1)) eg `extensions: ['ts']`
+- Update packages to resolve security vulnerabilities
+
 ### v4.1.3
+- Someone deleted this repo... it's back.
 - Fix security vulnerability (y18n)
 - Use Github Actions for CI
 - If using NodeJS v14+ & Postgres, you must use `pg` >= 8.1.

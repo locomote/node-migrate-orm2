@@ -20,14 +20,22 @@ The example below uses MySQL. Locomote uses migrate-orm2 with Postgres. Testing 
 Build a connection & construct the migrate-orm2 Task object:
 
 ```js
-var orm         = require('orm');
-var MigrateTask = require('migrate-orm2');
+const orm         = require('orm');
+const MigrateTask = require('migrate-orm2');
 
 orm.connect(connectionString, function (err, connection) {
   if (err) throw err;
-  var task = new MigrateTask(connection.driver);
+
+  const task = new MigrateTask(connection.driver, { extensions: ['js', 'ts'] });
 });
 ```
+
+### Options
+
+* `coffee`: enable coffeescript v1 support (default: `false`)
+* `dir`: migrations directory (default: `"migrations"`)
+* `extensions`: file extensions of supported migration files (default: `['js']`)
+* `logger`: defaults to using `console`
 
 The Task constructor function can support options allowing for a custom migrations directory and/or coffeescript support (see 'Usage - opts' below).
 
