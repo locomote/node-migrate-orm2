@@ -1,3 +1,6 @@
+### v4.1.6
+- Add PostgreSQL UUID support
+
 ### v4.1.5
 - Update packages to resolve security vulnerabilities
 
