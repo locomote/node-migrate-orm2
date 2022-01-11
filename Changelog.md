@@ -1,3 +1,8 @@
+### v4.2.0
+- Add MySQL & PostgreSQL `defaultExpression` to allow setting default values via DB functions
+  - MySQL: `id: { type : 'text', key: true, defaultExpression: 'uuid()' }` (requires MySQL 8.0.13+)
+  - PostgreSQL: `id: { type : 'uuid', key: true, defaultExpression: 'uuid_generate_v4()' }`
+
 ### v4.1.6
 - Add PostgreSQL UUID support
 

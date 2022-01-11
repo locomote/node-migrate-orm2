@@ -18,19 +18,19 @@ jobs:
 
     services:
       mysql:
-        image: mysql:5.7
+        image: mariadb:10.6
         env:
-          MYSQL_DATABASE: mysql
-          MYSQL_USER: mysql
-          MYSQL_PASSWORD: mysql
-          MYSQL_ROOT_PASSWORD: mysql
+          MARIADB_DATABASE: mysql
+          MARIADB_USER: mysql
+          MARIADB_PASSWORD: mysql
+          MARIADB_ROOT_PASSWORD: mysql
         options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
         ports:
           - 3306:3306
 
       postgres:
         # Docker Hub image
-        image: postgres:13
+        image: postgres:14
         # Provide the password for postgres
         env:
           POSTGRES_PASSWORD: postgres
