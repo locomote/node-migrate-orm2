@@ -15,6 +15,7 @@ var fake = {
     return {
       addCollectionColumn: noop,
       createCollection: noop,
+      renameCollection: noop,
       renameCollectionColumn: noop,
       addIndex: noop,
       removeIndex: noop,
@@ -144,7 +145,6 @@ shared.examplesFor('supporting Promise interface', function(opts) {
 });
 
 describe('MigrationDSL', function() {
-
   var dialect = fake.dialect();
   var driver = fake.driver(dialect);
   var dsl;
@@ -162,7 +162,7 @@ describe('MigrationDSL', function() {
     sinon.verifyAndRestore();
   });
 
-  describe('MigrationDSL.prototype.createTable', function() {
+  describe('#createTable', function() {
     var contextOpts = {
       internalObject: dialect,
       internalMethodName: 'createCollection'
@@ -185,7 +185,30 @@ describe('MigrationDSL', function() {
     );
   });
 
-  describe('MigrationDSL.prototype.addColumn', function() {
+  describe('#renameTable', function() {
+    var contextOpts = {
+      internalObject: dialect,
+      internalMethodName: 'renameCollection'
+    };
+
+    shared.shouldBehaveLike('supporting callback interface',
+      _.assign({}, contextOpts, {
+        run: function(cb) {
+          return dsl.renameTable('old_table_name', 'new_table_name', cb);
+        }
+      })
+    );
+
+    shared.shouldBehaveLike('supporting Promise interface',
+      _.assign({}, contextOpts, {
+        run: function() {
+          return dsl.renameTable('old_table_name', 'new_table_name');
+        }
+      })
+    );
+  });
+
+  describe('#addColumn', function() {
     var contextOpts = {
       internalObject: dialect,
       internalMethodName: 'addCollectionColumn'
@@ -214,7 +237,7 @@ describe('MigrationDSL', function() {
     );
   });
 
-  describe('MigrationDSL.prototype.renameColumn', function() {
+  describe('#renameColumn', function() {
     var contextOpts = {
       internalObject: dialect,
       internalMethodName: 'renameCollectionColumn'
@@ -237,7 +260,7 @@ describe('MigrationDSL', function() {
     );
   });
 
-  describe('MigrationDSL.prototype.addIndex', function() {
+  describe('#addIndex', function() {
     var contextOpts = {
       internalObject: dialect,
       internalMethodName: 'addIndex'
@@ -260,7 +283,7 @@ describe('MigrationDSL', function() {
     );
   });
 
-  describe('MigrationDSL.prototype.dropIndex', function() {
+  describe('#dropIndex', function() {
     var contextOpts = {
       internalObject: dialect,
       internalMethodName: 'removeIndex'
@@ -283,7 +306,7 @@ describe('MigrationDSL', function() {
     );
   });
 
-  describe('MigrationDSL.prototype.dropColumn', function() {
+  describe('#dropColumn', function() {
     var contextOpts = {
       internalObject: dialect,
       internalMethodName: 'dropCollectionColumn'
@@ -306,7 +329,7 @@ describe('MigrationDSL', function() {
     );
   });
 
-  describe('MigrationDSL.prototype.dropTable', function() {
+  describe('#dropTable', function() {
     var contextOpts = {
       internalObject: dialect,
       internalMethodName: 'dropCollection'
@@ -329,7 +352,7 @@ describe('MigrationDSL', function() {
     );
   });
 
-  describe('MigrationDSL.prototype.addPrimaryKey', function() {
+  describe('#addPrimaryKey', function() {
     var contextOpts = {
       internalObject: dialect,
       internalMethodName: 'addPrimaryKey'
@@ -352,7 +375,7 @@ describe('MigrationDSL', function() {
     );
   });
 
-  describe('MigrationDSL.prototype.addForeignKey', function() {
+  describe('#addForeignKey', function() {
     var contextOpts = {
       internalObject: dialect,
       internalMethodName: 'addForeignKey'
@@ -375,7 +398,7 @@ describe('MigrationDSL', function() {
     );
   });
 
-  describe('MigrationDSL.prototype.dropPrimaryKey', function() {
+  describe('#dropPrimaryKey', function() {
     var contextOpts = {
       internalObject: dialect,
       internalMethodName: 'dropPrimaryKey'
@@ -398,7 +421,7 @@ describe('MigrationDSL', function() {
     );
   });
 
-  describe('MigrationDSL.prototype.dropForeignKey', function() {
+  describe('#dropForeignKey', function() {
     var contextOpts = {
       internalObject: dialect,
       internalMethodName: 'dropForeignKey'
@@ -421,7 +444,7 @@ describe('MigrationDSL', function() {
     );
   });
 
-  describe('MigrationDSL.prototype.hasTable', function() {
+  describe('#hasTable', function() {
     var contextOpts = {
       internalObject: dialect,
       internalMethodName: 'hasCollection'
@@ -444,7 +467,7 @@ describe('MigrationDSL', function() {
     );
   });
 
-  describe('MigrationDSL.prototype.getColumns', function() {
+  describe('#getColumns', function() {
     var contextOpts = {
       internalObject: dialect,
       internalMethodName: 'getCollectionProperties'
@@ -467,7 +490,7 @@ describe('MigrationDSL', function() {
     );
   });
 
-  describe('MigrationDSL.prototype.execQuery', function() {
+  describe('#execQuery', function() {
     var contextOpts = {
       internalObject: driver,
       internalMethodName: 'execQuery'

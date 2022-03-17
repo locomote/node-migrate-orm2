@@ -1,3 +1,6 @@
+### v4.3.0
+- Add `renameTable`
+
 ### v4.2.0
 - Add MySQL & PostgreSQL `defaultExpression` to allow setting default values via DB functions
   - MySQL: `id: { type : 'text', key: true, defaultExpression: 'uuid()' }` (requires MySQL 8.0.13+)

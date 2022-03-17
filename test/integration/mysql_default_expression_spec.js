@@ -9,7 +9,7 @@ var Promise    = require('bluebird');
 
 if (helpers.protocol() !== 'mysql') return;
 
-describe('Postgres', function() {
+describe('MySQL', function() {
   var task;
   var conn;
 
