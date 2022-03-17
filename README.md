@@ -128,6 +128,7 @@ exports.down = function (next) {
 The full list of operations available through ```this```:
 
 * createTable
+* renameTable
 * dropTable
 * addColumn
 * dropColumn
