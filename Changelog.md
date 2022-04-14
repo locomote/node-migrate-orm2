@@ -1,10 +1,14 @@
+### v5.0.0
+- Update `async` package from v2 to v3 to resolve security vulnerabilities ([5](../../pull/5))
+- Drop support for node < 6 (due to `async` package update)
+
 ### v4.3.0
-- Add `renameTable`
+- Add `renameTable` ([4](../../pull/4))
 
 ### v4.2.0
-- Add MySQL & PostgreSQL `defaultExpression` to allow setting default values via DB functions
-  - MySQL: `id: { type : 'text', key: true, defaultExpression: 'uuid()' }` (requires MySQL 8.0.13+)
-  - PostgreSQL: `id: { type : 'uuid', key: true, defaultExpression: 'uuid_generate_v4()' }`
+- Add MySQL & PostgreSQL `defaultExpression` to allow setting default values via DB functions ([3](../../pull/3))
+  - MySQL: `id: { type : 'text', key: true, defaultExpression: 'uuid()' }` (requires MySQL 8.0.13+) ([2](../../pull/2))
+  - PostgreSQL: `id: { type : 'uuid', key: true, defaultExpression: 'uuid_generate_v4()' }` ([2](../../pull/2))
 
 ### v4.1.6
 - Add PostgreSQL UUID support
